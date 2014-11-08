@@ -55,7 +55,6 @@ peg! parser(r#"
 use super::{Item,PropertyValue};
 
 #[pub]
-
 item -> Item
     = p:prop ++ eol {
         let mut rv = Item::new();
@@ -65,7 +64,6 @@ item -> Item
         };
         rv
     }
-
 
 prop -> (String, PropertyValue)
     = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
@@ -88,11 +86,20 @@ prop_value -> String
 name_char = ([a-zA-Z] / "-")
 prop_char = name_char / [=;]
 value_char = !eol .
-eol = "\n" / "\r\n" / "\r" / "\u2028" / "\u2029"
+
+eol = "\n" / "\r\n" / "\r"
+whitespace = " " / "\t"
 
 "#)
 
 
 pub fn parse_item(s: &String) -> Result<Item, String> {
-    parser::item(s.as_slice())
+    // XXX: The unfolding should be worked into the PEG
+    // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
+    let unfolded = s
+        .replace("\n ", "").replace("\n\t", "")
+        .replace("\r\n ", "").replace("\r\n\t", "")
+        .replace("\r ", "").replace("\r\t", "");
+    parser::item(unfolded.as_slice())
+
 }
