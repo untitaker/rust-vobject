@@ -1,0 +1,11 @@
+[package]
+name = "vobject"
+version = "0.0.1"
+authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
+
+[lib]
+name = "vobject"
+path = "src/vobject/lib.rs"
+
+[dependencies.peg]
+git = "https://github.com/kevinmehall/rust-peg.git"
