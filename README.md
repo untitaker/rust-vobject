@@ -1,5 +1,7 @@
 # VObject parser for Rust
 
+[![Build Status](https://travis-ci.org/untitaker/rust-vobject.svg?branch=master)](https://travis-ci.org/untitaker/rust-vobject)
+
 This is a primitive unstable vobject parser for Rust, originally written for [a
 simple addressbook script](https://github.com/untitaker/mates.rs) and based on
 [rust-peg](https://github.com/kevinmehall/rust-peg).
