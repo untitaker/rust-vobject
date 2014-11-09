@@ -8,7 +8,7 @@ macro_rules! s(
 
 
 #[test]
-fn test_wikipedia_1() {
+fn test_vcard_basic() {
     let item = parse_component(s!(
         "BEGIN:VCARD\n\
         VERSION:2.1\n\
@@ -45,6 +45,37 @@ fn test_line_cont() {
         4444\n\
         END:VCARD")).unwrap();
 
+    assert_eq!(&item.name, s!("VCARD"));
     assert_eq!(item.single_prop(s!("TEL")).unwrap().get_raw_value(), s!("55554444"));
     assert_eq!(item.single_prop(s!("N")).unwrap().get_raw_value(), s!("Nikdo;Nikdo=vic"));
+}
+
+#[test]
+fn test_icalendar_basic() {
+    let item = parse_component(s!(
+            "BEGIN:VCALENDAR\n\
+            VERSION:2.0\n\
+            PRODID:http://www.example.com/calendarapplication/\n\
+            METHOD:PUBLISH\n\
+            BEGIN:VEVENT\n\
+            UID:461092315540@example.com\n\
+            ORGANIZER;CN=\"Alice Balder, Example Inc.\":MAILTO:alice@example.com\n\
+            LOCATION:Somewhere\n\
+            SUMMARY:Eine Kurzinfo\n\
+            DESCRIPTION:Beschreibung des Termines\n\
+            CLASS:PUBLIC\n\
+            DTSTART:20060910T220000Z\n\
+            DTEND:20060919T215900Z\n\
+            DTSTAMP:20060812T125900Z\n\
+            END:VEVENT\n\
+            END:VCALENDAR\n")).unwrap();
+
+    assert_eq!(&item.name, s!("VCALENDAR"));
+    assert!(item.single_prop(s!("LOCATION")).is_none());
+    assert!(item.single_prop(s!("ORGANIZER")).is_none());
+
+    let event = &item.subcomponents[0];
+    assert_eq!(&event.name, s!("VEVENT"));
+    assert!(event.single_prop(s!("ORGANIZER")).is_some());
+    assert_eq!(event.single_prop(s!("LOCATION")).unwrap().get_raw_value(), s!("Somewhere"));
 }

@@ -31,14 +31,18 @@ pub struct Component {
     pub name: String,
 
     #[doc="The component's properties."]
-    pub props: HashMap<String, Vec<Property>>
+    pub props: HashMap<String, Vec<Property>>,
+
+    #[doc="The component's child or sub-components."]
+    pub subcomponents: Vec<Component>
 }
 
 impl Component {
     fn new(name: String) -> Component {
         Component {
             name: name,
-            props: HashMap::new()
+            props: HashMap::new(),
+            subcomponents: vec![]
         }
     }
 
@@ -82,23 +86,35 @@ use super::{Component,Property};
 
 #[pub]
 component -> Component
-    = name:component_begin (eol+) ps:props (eol+) component_end __ {
+    = name:component_begin
+      ps:props
+      cs:components?
+      component_end {
         let mut rv = Component::new(name);
+
+        match cs {
+            Some(components) => { rv.subcomponents = components; },
+            None => ()
+        };
 
         for (k, v) in ps.into_iter() {
             rv.all_props_mut(k).push(v);
         };
+
         rv
     }
 
 component_begin -> String
-    = "BEGIN:" v:prop_value { v }
+    = "BEGIN:" v:prop_value __ { v }
 
 component_end -> String
-    = "END:" v:prop_value { v }
+    = "END:" v:prop_value __ { v }
+
+components -> Vec<Component>
+    = cs:component ++ eols __ { cs }
 
 props -> Vec<(String, Property)>
-    = ps:prop ++ (eol+) { ps }
+    = ps:prop ++ eols __ { ps }
 
 prop -> (String, Property)
     = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
@@ -110,20 +126,24 @@ prop -> (String, Property)
     }
 
 prop_name -> String
-    = !"BEGIN" !"END" name_char+ { match_str.into_string() }
+    = !"BEGIN" !"END" iana_token+ { match_str.into_string() }
 
 prop_params -> String
-    = prop_char+ { match_str.into_string() }
+    = (param_name / [",;=] / param_value)+ { match_str.into_string() }
 
 prop_value -> String
     = value_char+ { match_str.into_string() }
 
-// Characters
-name_char = ([a-zA-Z] / "-")
-prop_char = name_char / [=;]
+param_name = iana_token
+param_value = param_text
+param_text = safe_char
+
+iana_token = ([a-zA-Z0-9] / "-")+
 value_char = !eol .
+safe_char = !eol !";" !":" !"," .
 
 eol = "\n" / "\r\n" / "\r"
+eols = eol+
 whitespace = " " / "\t"
 __ = (eol / whitespace)*
 
