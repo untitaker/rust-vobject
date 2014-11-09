@@ -1,6 +1,6 @@
 #![feature(globs,macro_rules)]
 extern crate vobject;
-use vobject::parse_item;
+use vobject::parse_component;
 
 macro_rules! s(
     ($i:expr) => (&$i.into_string());
@@ -9,7 +9,7 @@ macro_rules! s(
 
 #[test]
 fn test_wikipedia_1() {
-    let item = parse_item(s!(
+    let item = parse_component(s!(
         "BEGIN:VCARD\n\
         VERSION:2.1\n\
         N:Mustermann;Erika\n\
@@ -24,8 +24,8 @@ fn test_wikipedia_1() {
         REV:20140301T221110Z\n\
         END:VCARD\n\r\n\n")).unwrap();
 
-    assert_eq!(item.single_value(s!("FN")), Some(s!("Erika Mustermann")));
-    assert_eq!(item.single_value(s!("N")),  Some(s!("Mustermann;Erika")));
+    assert_eq!(item.single_prop(s!("FN")).unwrap().get_raw_value(), s!("Erika Mustermann"));
+    assert_eq!(item.single_prop(s!("N")).unwrap().get_raw_value(),  s!("Mustermann;Erika"));
 
     let mut tel_values = item.all_props(s!("TEL")).iter().map(|x| x.get_raw_value());
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 9999123"));
@@ -35,7 +35,7 @@ fn test_wikipedia_1() {
 
 #[test]
 fn test_line_cont() {
-    let item = parse_item(s!(
+    let item = parse_component(s!(
         "BEGIN:VCARD\n\
         VERSION:2.1\n\
         N;ENCODING=QUOTED-PRINTABLE:Nikdo;Nikdo=\n\t\
@@ -45,6 +45,6 @@ fn test_line_cont() {
         4444\n\
         END:VCARD")).unwrap();
 
-    assert_eq!(item.single_value(s!("TEL")), Some(s!("55554444")));
-    assert_eq!(item.single_value(s!("N")), Some(s!("Nikdo;Nikdo=vic")));
+    assert_eq!(item.single_prop(s!("TEL")).unwrap().get_raw_value(), s!("55554444"));
+    assert_eq!(item.single_prop(s!("N")).unwrap().get_raw_value(), s!("Nikdo;Nikdo=vic"));
 }
