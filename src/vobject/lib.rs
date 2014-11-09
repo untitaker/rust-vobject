@@ -56,7 +56,7 @@ use super::{Item,PropertyValue};
 
 #[pub]
 item -> Item
-    = p:prop ++ eol {
+    = p:prop ++ (eol+) __ {
         let mut rv = Item::new();
 
         for (k, v) in p.into_iter() {
@@ -89,6 +89,7 @@ value_char = !eol .
 
 eol = "\n" / "\r\n" / "\r"
 whitespace = " " / "\t"
+__ = (eol / whitespace)*
 
 "#)
 

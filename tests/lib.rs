@@ -17,12 +17,12 @@ fn test_wikipedia_1() {
         ORG:Wikipedia\n\
         TITLE:Oberleutnant\n\
         PHOTO;JPEG:http://commons.wikimedia.org/wiki/File:Erika_Mustermann_2010.jpg\n\
-        TEL;WORK;VOICE:(0221) 9999123\n\
+        TEL;WORK;VOICE:(0221) 9999123\n\n\n\
         TEL;HOME;VOICE:(0221) 1234567\n\
         ADR;HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\n\
         EMAIL;PREF;INTERNET:erika@mustermann.de\n\
         REV:20140301T221110Z\n\
-        END:VCARD")).unwrap();
+        END:VCARD\n\r\n\n")).unwrap();
 
     assert_eq!(item.single_value(s!("FN")), Some(s!("Erika Mustermann")));
     assert_eq!(item.single_value(s!("N")),  Some(s!("Mustermann;Erika")));
