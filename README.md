@@ -11,3 +11,5 @@ of VCard and iCalendar equally badly.
 
 See the testsuite for some basic usage. This is an experiment by me to learn
 Rust, and the API is too imperfect to be documented. Suggestions are welcome.
+
+It is licensed under the MIT license, see `LICENSE`.
