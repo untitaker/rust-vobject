@@ -79,3 +79,13 @@ fn test_icalendar_basic() {
     assert!(event.single_prop(s!("ORGANIZER")).is_some());
     assert_eq!(event.single_prop(s!("LOCATION")).unwrap().get_raw_value(), s!("Somewhere"));
 }
+
+#[test]
+fn test_escaping() {
+    let item = parse_component(s!(
+            "BEGIN:VCALENDAR\n\
+            ORGANIZER;CN=\"Cott:n Eye Joe\":mailto:joe@joe.com\n\
+            END:VCALENDAR\n")).unwrap();
+    assert_eq!(&item.name, s!("VCALENDAR"));
+    assert_eq!(item.single_prop(s!("ORGANIZER")).unwrap().get_raw_value(), s!("mailto:joe@joe.com"));
+}

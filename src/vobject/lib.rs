@@ -6,23 +6,32 @@ use std::collections::HashMap;
 use std::collections::hash_map::{Occupied, Vacant};
 
 pub struct Property {
-    raw_params: String,
+    params: HashMap<String, String>,
     raw_value: String,
 }
 
 impl Property {
-    fn new(raw_params: String, raw_value: String) -> Property {
+    fn new(params: HashMap<String, String>, raw_value: String) -> Property {
         Property {
-            raw_params: raw_params,
+            params: params,
             raw_value: raw_value
         }
     }
 
-    #[doc="Get parameters as unparsed string."]
-    pub fn get_raw_params(&self) -> &String { &self.raw_params }
+    #[doc="Get parameters."]
+    pub fn get_params(&self) -> &HashMap<String, String> {
+        &self.params
+    }
 
     #[doc="Get value as unparsed string."]
-    pub fn get_raw_value(&self) -> &String { &self.raw_value }
+    pub fn get_raw_value(&self) -> &String {
+        &self.raw_value
+    }
+
+    #[doc="Get value as unescaped string."]
+    pub fn value_as_string(&self) -> String {
+        unescape_chars(self.get_raw_value())
+    }
 }
 
 
@@ -83,6 +92,7 @@ impl Component {
 
 peg! parser(r#"
 use super::{Component,Property};
+use std::collections::HashMap;
 
 #[pub]
 component -> Component
@@ -105,44 +115,70 @@ component -> Component
     }
 
 component_begin -> String
-    = "BEGIN:" v:prop_value __ { v }
+    = "BEGIN:" v:value __ { v }
 
 component_end -> String
-    = "END:" v:prop_value __ { v }
+    = "END:" v:value __ { v }
 
 components -> Vec<Component>
     = cs:component ++ eols __ { cs }
 
 props -> Vec<(String, Property)>
-    = ps:prop ++ eols __ { ps }
+    = ps:contentline ++ eols __ { ps }
 
-prop -> (String, Property)
-    = k:prop_name p:(";" p:prop_params {p})? ":" v:prop_value {
-        let params = match p {
-            Some(x) => x,
-            None => "".into_string()
-        };
-        (k, Property::new(params, v))
+contentline -> (String, Property)
+    = k:name p:params ":" v:value {
+        (k, Property::new(p, v))
     }
 
-prop_name -> String
+name -> String
     = !"BEGIN" !"END" iana_token+ { match_str.into_string() }
 
-prop_params -> String
-    = (param_name / [",;=] / param_value)+ { match_str.into_string() }
+params -> HashMap<String, String>
+    = ps:(";" p:param {p})* {
+        let mut rv: HashMap<String, String> = HashMap::new();
+        for (k, v) in ps.into_iter() {
+            rv.insert(k, v);
+        };
+        rv
+    }
 
-prop_value -> String
+param -> (String, String)
+    // FIXME: Doesn't handle comma-separated values
+    = k:param_name v:("=" v:param_value { v })? {
+        (k, match v {
+            Some(x) => x,
+            None => "".into_string()
+        })
+    }
+
+param_name -> String
+    = iana_token+ { match_str.into_string() }
+
+param_value -> String
+    = x:(quoted_string / param_text) { print!("{}\n", x); x }
+
+param_text -> String
+    = safe_char* { match_str.into_string() }
+
+value -> String
     = value_char+ { match_str.into_string() }
 
-param_name = iana_token
-param_value = param_text
-param_text = safe_char
+
+quoted_string -> String
+    = dquote x:quoted_content dquote { x }
+
+quoted_content -> String
+    = qsafe_char* { match_str.into_string() }
 
 iana_token = ([a-zA-Z0-9] / "-")+
+safe_char = !";" !":" !"," value_char
+qsafe_char = !dquote value_char // FIXME
+
 value_char = !eol .
-safe_char = !eol !";" !":" !"," .
 
 eol = "\n" / "\r\n" / "\r"
+dquote = "\""
 eols = eol+
 whitespace = " " / "\t"
 __ = (eol / whitespace)*
@@ -160,4 +196,30 @@ pub fn parse_component(s: &String) -> Result<Component, String> {
         .replace("\r ", "").replace("\r\t", "");
 
     parser::component(unfolded.as_slice())
+}
+
+#[doc="Escape text for a VObject property value."]
+pub fn escape_chars(s: &String) -> String {
+    // Order matters! Lifted from icalendar.parser
+    // https://github.com/collective/icalendar/
+    s
+        .replace("\\N", "\n")
+        .replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+}
+
+#[doc="Unescape text from a VObject property value."]
+pub fn unescape_chars(s: &String) -> String {
+    // Order matters! Lifted from icalendar.parser
+    // https://github.com/collective/icalendar/
+    s
+        .replace("\\N", "\\n")
+        .replace("\r\n", "\n")
+        .replace("\\n", "\n")
+        .replace("\\,", ",")
+        .replace("\\;", ";")
+        .replace("\\\\", "\\")
 }
