@@ -19,3 +19,9 @@ clean:
 	cd "$(THIS_DIR)"
 	mv code.bak src/vobject/lib.rs || true
 	rm *.bak || true
+
+upload:
+	cd "$(THIS_DIR)"
+	echo '<!doctype html><title>rust-vobject</title><meta http-equiv="refresh" content="0; ./vobject/">' \
+		> ./target/doc/index.htm
+	rsync -avze ssh ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/

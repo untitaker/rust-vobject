@@ -8,6 +8,10 @@ based on [rust-peg](https://github.com/kevinmehall/rust-peg).
 
 ## Documentation
 
+The API documentation is [online
+available](http://rust-vobject.unterwaditzer.net), or you can build it
+yourself:
+
     make docs
 
 ## Testsuite
