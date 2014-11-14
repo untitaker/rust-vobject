@@ -1,9 +1,18 @@
+// DOCS
+
+#![crate_name = "vobject"]
+#![crate_type = "lib"]
+#![license = "MIT"]
+#![comment = "Parser for VObject and iCalendar."]
+
 #![feature(phase)]
 #[phase(plugin)]
 extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
 use std::collections::hash_map::{Occupied, Vacant};
+
+
 
 pub struct Property {
     params: HashMap<String, String>,
