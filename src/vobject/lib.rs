@@ -51,7 +51,7 @@ pub struct Component {
     #[doc="The component's properties."]
     pub props: HashMap<String, Vec<Property>>,
 
-    #[doc="The component's child or sub-components."]
+    #[doc="The component's child- or sub-components."]
     pub subcomponents: Vec<Component>
 }
 
