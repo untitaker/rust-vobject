@@ -1,5 +1,7 @@
 # VObject parser for Rust
 
+**This is an experiment by me to learn Rust, performance and API are bad.**
+
 [![Build Status](https://travis-ci.org/untitaker/rust-vobject.svg?branch=master)](https://travis-ci.org/untitaker/rust-vobject)
 
 This is a primitive VObject and iCalendar parser for Rust, originally written
@@ -18,6 +20,5 @@ yourself:
 
     make test
 
-This is an experiment by me to learn Rust, and the API is pretty bad.
 
 It is licensed under MIT, see `LICENSE`.
