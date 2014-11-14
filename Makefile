@@ -12,7 +12,7 @@ docs:
 	cp src/vobject/lib.rs code.bak
 	cat README.md | sed -e 's/^/\/\/! /g' > readme.bak
 	sed -i '/\/\/ DOCS/r readme.bak' src/vobject/lib.rs
-	cargo doc
+	cargo doc --no-deps
 	make clean
 
 clean:
@@ -24,4 +24,4 @@ upload:
 	cd "$(THIS_DIR)"
 	echo '<!doctype html><title>rust-vobject</title><meta http-equiv="refresh" content="0; ./vobject/">' \
 		> ./target/doc/index.htm
-	rsync -vze ssh ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/
+	rsync --del -rvze ssh ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/
