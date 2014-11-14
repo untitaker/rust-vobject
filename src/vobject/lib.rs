@@ -165,7 +165,7 @@ param_name -> String
     = iana_token+ { match_str.into_string() }
 
 param_value -> String
-    = x:(quoted_string / param_text) { print!("{}\n", x); x }
+    = x:(quoted_string / param_text) { x }
 
 param_text -> String
     = safe_char* { match_str.into_string() }
