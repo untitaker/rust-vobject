@@ -90,7 +90,7 @@ impl Component {
     #[doc="Retrieve properties by key.
         Returns an empty slice if key doesn't exist."]
     pub fn all_props(&self, key: &String) -> &[Property] {
-        static EMPTY: &'static [Property] = [];
+        static EMPTY: &'static [Property] = &[];
         match self.props.get(key) {
             Some(values) => values.as_slice(),
             None => EMPTY
