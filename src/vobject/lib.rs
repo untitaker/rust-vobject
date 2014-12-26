@@ -192,7 +192,7 @@ eols = eol+
 whitespace = " " / "\t"
 __ = (eol / whitespace)*
 
-"#)
+"#);
 
 
 #[doc="Parse a component. The error value is a human-readable message."]
