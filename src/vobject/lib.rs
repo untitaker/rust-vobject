@@ -10,7 +10,7 @@
 extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 
 
