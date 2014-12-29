@@ -4,7 +4,7 @@ use vobject::parse_component;
 
 macro_rules! s(
     ($i:expr) => (&$i.into_string());
-)
+);
 
 
 #[test]
