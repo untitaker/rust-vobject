@@ -66,7 +66,7 @@ impl Component {
 
     #[doc="Retrieve one property (from many) by key.
         Returns `None` if nothing is found."]
-    pub fn single_prop(&self, key: &String) -> Option<&Property> {
+    pub fn single_prop(&self, key: &str) -> Option<&Property> {
         match self.props.get(key) {
             Some(x) => {
                 match x.len() {
@@ -80,8 +80,8 @@ impl Component {
 
     #[doc="Retrieve a mutable vector of properties for this key.
         Creates one (and inserts it into the component) if none exists."]
-    pub fn all_props_mut(&mut self, key: String) -> &mut Vec<Property> {
-        match self.props.entry(key) {
+    pub fn all_props_mut(&mut self, key: &str) -> &mut Vec<Property> {
+        match self.props.entry(String::from_str(key)) {
             Occupied(values) => values.into_mut(),
             Vacant(values) => values.set(vec![])
         }
@@ -89,7 +89,7 @@ impl Component {
 
     #[doc="Retrieve properties by key.
         Returns an empty slice if key doesn't exist."]
-    pub fn all_props(&self, key: &String) -> &[Property] {
+    pub fn all_props(&self, key: &str) -> &[Property] {
         static EMPTY: &'static [Property] = &[];
         match self.props.get(key) {
             Some(values) => values.as_slice(),
@@ -124,61 +124,61 @@ component -> Component
     }
 
 component_begin -> String
-    = "BEGIN:" v:value __ { v }
+    = "BEGIN:" v:value __ { v.into_string() }
 
 component_end -> String
-    = "END:" v:value __ { v }
+    = "END:" v:value __ { v.into_string() }
 
 components -> Vec<Component>
     = cs:component ++ eols __ { cs }
 
-props -> Vec<(String, Property)>
-    = ps:contentline ++ eols __ { ps }
+props -> Vec<(&'input str, Property)>
+    = ps:prop ++ eols __ { ps }
 
-contentline -> (String, Property)
+prop -> (&'input str, Property)
     = k:name p:params ":" v:value {
         (k, Property::new(p, v))
     }
 
-name -> String
-    = !"BEGIN" !"END" iana_token+ { match_str.into_string() }
+name -> &'input str
+    = !"BEGIN" !"END" iana_token+ { match_str }
 
 params -> HashMap<String, String>
     = ps:(";" p:param {p})* {
         let mut rv: HashMap<String, String> = HashMap::new();
         for (k, v) in ps.into_iter() {
-            rv.insert(k, v);
+            rv.insert(k.into_string(), v.into_string());
         };
         rv
     }
 
-param -> (String, String)
+param -> (&'input str, &'input str)
     // FIXME: Doesn't handle comma-separated values
     = k:param_name v:("=" v:param_value { v })? {
         (k, match v {
             Some(x) => x,
-            None => "".into_string()
+            None => ""
         })
     }
 
-param_name -> String
-    = iana_token+ { match_str.into_string() }
+param_name -> &'input str
+    = iana_token+ { match_str }
 
-param_value -> String
+param_value -> &'input str
     = x:(quoted_string / param_text) { x }
 
-param_text -> String
-    = safe_char* { match_str.into_string() }
+param_text -> &'input str
+    = safe_char* { match_str }
 
 value -> String
     = value_char+ { match_str.into_string() }
 
 
-quoted_string -> String
+quoted_string -> &'input str
     = dquote x:quoted_content dquote { x }
 
-quoted_content -> String
-    = qsafe_char* { match_str.into_string() }
+quoted_content -> &'input str
+    = qsafe_char* { match_str }
 
 iana_token = ([a-zA-Z0-9] / "-")+
 safe_char = !";" !":" !"," value_char
