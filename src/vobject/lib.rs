@@ -12,14 +12,22 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 pub struct Property {
     params: HashMap<String, String>,
     raw_value: String,
+    prop_group: Option<String>
 }
 
 impl Property {
-    fn new(params: HashMap<String, String>, raw_value: String) -> Property {
+    fn new(params: HashMap<String, String>, raw_value: String, prop_group: Option<String>) -> Property {
         Property {
             params: params,
-            raw_value: raw_value
+            raw_value: raw_value,
+            prop_group: prop_group
         }
+    }
+
+    #[doc="Get property group. E.g. a contentline like `foo.FN:Markus` would result in the group \
+    being `\"foo\"`."]
+    pub fn get_prop_group(&self) -> &Option<String> {
+        &self.prop_group
     }
 
     #[doc="Get parameters."]
@@ -131,12 +139,18 @@ props -> Vec<(&'input str, Property)>
     = ps:prop ++ eols __ { ps }
 
 prop -> (&'input str, Property)
-    = k:name p:params ":" v:value {
-        (k, Property::new(p, v))
+    = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
+        (k, Property::new(p, v, g))
     }
 
+group -> String
+    = g:group_name "." { g }
+
+group_name -> String
+    = group_char+ { match_str.into_string() }
+
 name -> &'input str
-    = !"BEGIN" !"END" iana_token+ { match_str }
+    = iana_token+ { match_str }
 
 params -> HashMap<String, String>
     = ps:(";" p:param {p})* {
@@ -176,6 +190,7 @@ quoted_content -> &'input str
     = qsafe_char* { match_str }
 
 iana_token = ([a-zA-Z0-9] / "-")+
+group_char = ([a-zA-Z0-9] / "-")
 safe_char = !";" !":" !"," value_char
 qsafe_char = !dquote value_char // FIXME
 

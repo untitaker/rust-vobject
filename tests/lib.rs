@@ -90,3 +90,14 @@ fn test_escaping() {
     assert_eq!(&item.name, s!("VCALENDAR"));
     assert_eq!(item.single_prop("ORGANIZER").unwrap().get_raw_value(), s!("mailto:joe@joe.com"));
 }
+
+#[test]
+fn test_property_groups() {
+    let item = parse_component(s!(
+            "BEGIN:VCARD\n\
+            foo.EMAIL;TYPE=INTERNET:foo@example.com\n\
+            foo.X-ACTUAL-TYPE:CUSTOM\n\
+            END:VCARD\n")).unwrap();
+    assert_eq!(item.single_prop("EMAIL").unwrap().get_prop_group(), &Some("foo".to_owned()));
+
+}
