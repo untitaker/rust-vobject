@@ -8,15 +8,14 @@ This is a primitive VObject and iCalendar parser for Rust, originally written
 for [a simple addressbook script](https://github.com/untitaker/mates.rs) and
 based on [rust-peg](https://github.com/kevinmehall/rust-peg).
 
-## Documentation
-
+Sourcecode is available on [GitHub](https://github.com/untitaker/rust-vobject).
 The API documentation is [online
 available](http://rust-vobject.unterwaditzer.net), or you can build it
 yourself:
 
     make docs
 
-## Testsuite
+The testsuite can be run with:
 
     make test
 
