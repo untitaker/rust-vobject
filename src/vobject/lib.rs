@@ -1,10 +1,5 @@
 // DOCS
 
-#![crate_name = "vobject"]
-#![crate_type = "lib"]
-#![license = "MIT"]
-#![comment = "Parser for VObject and iCalendar."]
-
 #![feature(phase)]
 #[phase(plugin)]
 extern crate peg_syntax_ext;
