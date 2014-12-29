@@ -1,9 +1,10 @@
 #![feature(globs,macro_rules)]
 extern crate vobject;
 use vobject::parse_component;
+use std::borrow::ToOwned;
 
 macro_rules! s(
-    ($i:expr) => (&$i.into_string());
+    ($i:expr) => (&$i.to_owned());
 );
 
 
