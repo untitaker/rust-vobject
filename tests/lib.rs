@@ -24,10 +24,10 @@ fn test_vcard_basic() {
         REV:20140301T221110Z\n\
         END:VCARD\n\r\n\n")).unwrap();
 
-    assert_eq!(item.single_prop(s!("FN")).unwrap().get_raw_value(), s!("Erika Mustermann"));
-    assert_eq!(item.single_prop(s!("N")).unwrap().get_raw_value(),  s!("Mustermann;Erika"));
+    assert_eq!(item.single_prop("FN").unwrap().get_raw_value(), s!("Erika Mustermann"));
+    assert_eq!(item.single_prop("N").unwrap().get_raw_value(),  s!("Mustermann;Erika"));
 
-    let mut tel_values = item.all_props(s!("TEL")).iter().map(|x| x.get_raw_value());
+    let mut tel_values = item.all_props("TEL").iter().map(|x| x.get_raw_value());
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 9999123"));
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 1234567"));
     assert!(tel_values.next().is_none());
@@ -46,8 +46,8 @@ fn test_line_cont() {
         END:VCARD")).unwrap();
 
     assert_eq!(&item.name, s!("VCARD"));
-    assert_eq!(item.single_prop(s!("TEL")).unwrap().get_raw_value(), s!("55554444"));
-    assert_eq!(item.single_prop(s!("N")).unwrap().get_raw_value(), s!("Nikdo;Nikdo=vic"));
+    assert_eq!(item.single_prop("TEL").unwrap().get_raw_value(), s!("55554444"));
+    assert_eq!(item.single_prop("N").unwrap().get_raw_value(), s!("Nikdo;Nikdo=vic"));
 }
 
 #[test]
@@ -71,13 +71,13 @@ fn test_icalendar_basic() {
             END:VCALENDAR\n")).unwrap();
 
     assert_eq!(&item.name, s!("VCALENDAR"));
-    assert!(item.single_prop(s!("LOCATION")).is_none());
-    assert!(item.single_prop(s!("ORGANIZER")).is_none());
+    assert!(item.single_prop("LOCATION").is_none());
+    assert!(item.single_prop("ORGANIZER").is_none());
 
     let event = &item.subcomponents[0];
     assert_eq!(&event.name, s!("VEVENT"));
-    assert!(event.single_prop(s!("ORGANIZER")).is_some());
-    assert_eq!(event.single_prop(s!("LOCATION")).unwrap().get_raw_value(), s!("Somewhere"));
+    assert!(event.single_prop("ORGANIZER").is_some());
+    assert_eq!(event.single_prop("LOCATION").unwrap().get_raw_value(), s!("Somewhere"));
 }
 
 #[test]
@@ -87,5 +87,5 @@ fn test_escaping() {
             ORGANIZER;CN=\"Cott:n Eye Joe\":mailto:joe@joe.com\n\
             END:VCALENDAR\n")).unwrap();
     assert_eq!(&item.name, s!("VCALENDAR"));
-    assert_eq!(item.single_prop(s!("ORGANIZER")).unwrap().get_raw_value(), s!("mailto:joe@joe.com"));
+    assert_eq!(item.single_prop("ORGANIZER").unwrap().get_raw_value(), s!("mailto:joe@joe.com"));
 }
