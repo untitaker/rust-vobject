@@ -85,7 +85,7 @@ impl Component {
     pub fn all_props_mut(&mut self, key: &str) -> &mut Vec<Property> {
         match self.props.entry(String::from_str(key)) {
             Occupied(values) => values.into_mut(),
-            Vacant(values) => values.set(vec![])
+            Vacant(values) => values.insert(vec![])
         }
     }
 
@@ -126,10 +126,10 @@ component -> Component
     }
 
 component_begin -> String
-    = "BEGIN:" v:value __ { v.into_string() }
+    = "BEGIN:" v:value __ { v.to_string() }
 
 component_end -> String
-    = "END:" v:value __ { v.into_string() }
+    = "END:" v:value __ { v.to_string() }
 
 components -> Vec<Component>
     = cs:component ++ eols __ { cs }
@@ -146,7 +146,7 @@ group -> String
     = g:group_name "." { g }
 
 group_name -> String
-    = group_char+ { match_str.into_string() }
+    = group_char+ { match_str.to_string() }
 
 name -> &'input str
     = iana_token+ { match_str }
@@ -155,7 +155,7 @@ params -> HashMap<String, String>
     = ps:(";" p:param {p})* {
         let mut rv: HashMap<String, String> = HashMap::new();
         for (k, v) in ps.into_iter() {
-            rv.insert(k.into_string(), v.into_string());
+            rv.insert(k.to_string(), v.to_string());
         };
         rv
     }
@@ -179,7 +179,7 @@ param_text -> &'input str
     = safe_char* { match_str }
 
 value -> String
-    = value_char+ { match_str.into_string() }
+    = value_char+ { match_str.to_string() }
 
 
 quoted_string -> &'input str
