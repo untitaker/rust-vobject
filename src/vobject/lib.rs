@@ -23,23 +23,23 @@ impl Property {
         }
     }
 
-    #[doc="Get property group. E.g. a contentline like `foo.FN:Markus` would result in the group \
-    being `\"foo\"`."]
+    /// Get property group. E.g. a contentline like `foo.FN:Markus` would result in the group being
+    /// `"foo"`.
     pub fn get_prop_group(&self) -> &Option<String> {
         &self.prop_group
     }
 
-    #[doc="Get parameters."]
+    /// Get parameters.
     pub fn get_params(&self) -> &HashMap<String, String> {
         &self.params
     }
 
-    #[doc="Get value as unparsed string."]
+    /// Get value as unparsed string.
     pub fn get_raw_value(&self) -> &String {
         &self.raw_value
     }
 
-    #[doc="Get value as unescaped string."]
+    /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
         unescape_chars(self.get_raw_value())
     }
@@ -47,13 +47,13 @@ impl Property {
 
 
 pub struct Component {
-    #[doc="The name of the component, such as `VCARD` or `VEVENT`."]
+    /// The name of the component, such as `VCARD` or `VEVENT`.
     pub name: String,
 
-    #[doc="The component's properties."]
+    /// The component's properties.
     pub props: HashMap<String, Vec<Property>>,
 
-    #[doc="The component's child- or sub-components."]
+    /// The component's child- or sub-components.
     pub subcomponents: Vec<Component>
 }
 
@@ -66,8 +66,7 @@ impl Component {
         }
     }
 
-    #[doc="Retrieve one property (from many) by key.
-        Returns `None` if nothing is found."]
+    /// Retrieve one property (from many) by key. Returns `None` if nothing is found.
     pub fn single_prop(&self, key: &str) -> Option<&Property> {
         match self.props.get(key) {
             Some(x) => {
@@ -80,8 +79,8 @@ impl Component {
         }
     }
 
-    #[doc="Retrieve a mutable vector of properties for this key.
-        Creates one (and inserts it into the component) if none exists."]
+    /// Retrieve a mutable vector of properties for this key. Creates one (and inserts it into the
+    /// component) if none exists.
     pub fn all_props_mut(&mut self, key: &str) -> &mut Vec<Property> {
         match self.props.entry(String::from_str(key)) {
             Occupied(values) => values.into_mut(),
@@ -89,8 +88,7 @@ impl Component {
         }
     }
 
-    #[doc="Retrieve properties by key.
-        Returns an empty slice if key doesn't exist."]
+    /// Retrieve properties by key. Returns an empty slice if key doesn't exist.
     pub fn all_props(&self, key: &str) -> &[Property] {
         static EMPTY: &'static [Property] = &[];
         match self.props.get(key) {
@@ -204,7 +202,7 @@ __ = (eol / whitespace)*
 "#);
 
 
-#[doc="Parse a component. The error value is a human-readable message."]
+/// Parse a component. The error value is a human-readable message.
 pub fn parse_component(s: &String) -> Result<Component, String> {
     // XXX: The unfolding should be worked into the PEG
     // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
@@ -216,7 +214,7 @@ pub fn parse_component(s: &String) -> Result<Component, String> {
     parser::component(unfolded.as_slice())
 }
 
-#[doc="Escape text for a VObject property value."]
+/// Escape text for a VObject property value.
 pub fn escape_chars(s: &String) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
@@ -229,7 +227,7 @@ pub fn escape_chars(s: &String) -> String {
         .replace("\n", "\\n")
 }
 
-#[doc="Unescape text from a VObject property value."]
+/// Unescape text from a VObject property value.
 pub fn unescape_chars(s: &String) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
