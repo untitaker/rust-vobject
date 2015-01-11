@@ -12,8 +12,7 @@ docs:
 	cp src/vobject/lib.rs code.bak
 	cat README.md | sed -e 's/^/\/\/! /g' > readme.bak
 	sed -i '/\/\/ DOCS/r readme.bak' src/vobject/lib.rs
-	cargo doc --no-deps
-	make clean
+	(cargo doc && make clean) || (make clean && false)
 
 clean:
 	cd "$(THIS_DIR)"
