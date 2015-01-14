@@ -207,8 +207,8 @@ pub fn parse_component(s: &String) -> Result<Component, String> {
     // XXX: The unfolding should be worked into the PEG
     // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
     let unfolded = s
-        .replace("\n ", "").replace("\n\t", "")
         .replace("\r\n ", "").replace("\r\n\t", "")
+        .replace("\n ", "").replace("\n\t", "")
         .replace("\r ", "").replace("\r\t", "");
 
     parser::component(unfolded.as_slice())
