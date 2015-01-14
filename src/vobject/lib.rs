@@ -193,7 +193,7 @@ qsafe_char = !dquote value_char // FIXME
 
 value_char = !eol .
 
-eol = "\n" / "\r\n" / "\r"
+eol = "\r\n" / "\n" / "\r"
 dquote = "\""
 eols = eol+
 whitespace = " " / "\t"
