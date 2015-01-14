@@ -1,6 +1,13 @@
 [package]
 name = "vobject"
 description = "Simple VObject parsing library."
+
+homepage = "http://rust-vobject.unterwaditzer.net/"
+documentation = "http://rust-vobject.unterwaditzer.net/"
+repository = "https://github.com/untitaker/rust-vobject"
+readme = "README.md"
+keywords = ["vobject", "icalendar", "calendar", "contacts"]
+
 version = "0.1.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
