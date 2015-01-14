@@ -1,6 +1,7 @@
 [package]
 name = "vobject"
-version = "0.0.1"
+description = "Simple VObject parsing library."
+version = "0.1.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 
@@ -8,5 +9,5 @@ license = "MIT"
 name = "vobject"
 path = "src/vobject/lib.rs"
 
-[dependencies.peg]
-git = "https://github.com/kevinmehall/rust-peg.git"
+[dependencies]
+peg = "0.1.3"
