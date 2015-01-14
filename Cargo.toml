@@ -8,7 +8,7 @@ repository = "https://github.com/untitaker/rust-vobject"
 readme = "README.md"
 keywords = ["vobject", "icalendar", "calendar", "contacts"]
 
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 
