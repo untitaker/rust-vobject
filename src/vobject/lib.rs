@@ -1,5 +1,6 @@
 // DOCS
 
+#![allow(unstable)]
 #![feature(plugin)]
 #[plugin] extern crate peg_syntax_ext;
 
