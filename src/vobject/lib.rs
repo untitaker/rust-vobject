@@ -187,6 +187,9 @@ value_char = !eol .
 eol = "\r\n" / "\n" / "\r"
 dquote = "\""
 eols = eol+
+
+// Taken from vCard. vCalendar's is a subset. Together with the definition of "qsafe_char" this
+// might reject a bunch of valid iCalendars, but I can't imagine one.
 ctl = [\u{00}-\u{1F}] / "\u{7F}"
 
 whitespace = " " / "\t"
