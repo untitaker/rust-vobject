@@ -23,4 +23,4 @@ upload:
 	cd "$(THIS_DIR)"
 	echo '<!doctype html><title>rust-vobject</title><meta http-equiv="refresh" content="0; ./vobject/">' \
 		> ./target/doc/index.htm
-	rsync --del -rvze ssh ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/
+	rsync -av --chmod=755 ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/
