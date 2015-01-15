@@ -10,9 +10,15 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 
 pub struct Property {
-    params: HashMap<String, String>,
-    raw_value: String,
-    prop_group: Option<String>
+    /// Parameters.
+    pub params: HashMap<String, String>,
+
+    /// Value as unparsed string.
+    pub raw_value: String,
+
+    /// Property group. E.g. a contentline like `foo.FN:Markus` would result in the group being
+    /// `"foo"`.
+    pub prop_group: Option<String>
 }
 
 impl Property {
@@ -24,25 +30,9 @@ impl Property {
         }
     }
 
-    /// Get property group. E.g. a contentline like `foo.FN:Markus` would result in the group being
-    /// `"foo"`.
-    pub fn get_prop_group(&self) -> &Option<String> {
-        &self.prop_group
-    }
-
-    /// Get parameters.
-    pub fn get_params(&self) -> &HashMap<String, String> {
-        &self.params
-    }
-
-    /// Get value as unparsed string.
-    pub fn get_raw_value(&self) -> &String {
-        &self.raw_value
-    }
-
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
-        unescape_chars(self.get_raw_value())
+        unescape_chars(self.raw_value.as_slice())
     }
 }
 
@@ -206,19 +196,54 @@ __ = (eol / whitespace)*
 
 
 /// Parse a component. The error value is a human-readable message.
-pub fn parse_component(s: &String) -> Result<Component, String> {
+pub fn parse_component(s: &str) -> Result<Component, String> {
     // XXX: The unfolding should be worked into the PEG
     // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
-    let unfolded = s
-        .replace("\r\n ", "").replace("\r\n\t", "")
-        .replace("\n ", "").replace("\n\t", "")
-        .replace("\r ", "").replace("\r\t", "");
-
+    let unfolded = unfold_lines(s);
     parser::component(unfolded.as_slice())
 }
 
+/// Write a component. The error value is a human-readable message.
+pub fn write_component(c: &Component) -> String {
+    fn inner(buf: &mut String, c: &Component) {
+        buf.push_str("BEGIN:");
+        buf.push_str(c.name.as_slice());
+        buf.push_str("\r\n");
+
+        for (prop_name, props) in c.props.iter() {
+            for prop in props.iter() {
+                match prop.prop_group {
+                    Some(ref x) => { buf.push_str(x.as_slice()); buf.push('.'); },
+                    None => ()
+                };
+                buf.push_str(prop_name.as_slice());
+                for (param_key, param_value) in prop.params.iter() {
+                    buf.push(';');
+                    buf.push_str(param_key.as_slice());
+                    buf.push('=');
+                    buf.push_str(param_value.as_slice());
+                };
+                buf.push(':');
+                buf.push_str(fold_line(prop.raw_value.as_slice()).as_slice());
+            };
+        };
+
+        for subcomponent in c.subcomponents.iter() {
+            inner(buf, subcomponent);
+        };
+
+        buf.push_str("END:");
+        buf.push_str(c.name.as_slice());
+        buf.push_str("\r\n");
+    }
+
+    let mut buf = String::new();
+    inner(&mut buf, c);
+    buf
+}
+
 /// Escape text for a VObject property value.
-pub fn escape_chars(s: &String) -> String {
+pub fn escape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
     s
@@ -231,7 +256,7 @@ pub fn escape_chars(s: &String) -> String {
 }
 
 /// Unescape text from a VObject property value.
-pub fn unescape_chars(s: &String) -> String {
+pub fn unescape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
     s
@@ -241,4 +266,25 @@ pub fn unescape_chars(s: &String) -> String {
         .replace("\\,", ",")
         .replace("\\;", ";")
         .replace("\\\\", "\\")
+}
+
+/// Unfold contentline.
+pub fn unfold_lines(s: &str) -> String {
+    s
+        .replace("\r\n ", "").replace("\r\n\t", "")
+        .replace("\n ", "").replace("\n\t", "")
+        .replace("\r ", "").replace("\r\t", "")
+}
+
+/// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
+/// '\n' or '\r' in it.
+pub fn fold_line(s: &str) -> String {
+    let mut rv = String::new();
+    for (i, c) in s.chars().enumerate() {
+        rv.push(c);
+        if i % 75 == 0 {
+            rv.push_str("\r\n ");
+        };
+    };
+    rv
 }
