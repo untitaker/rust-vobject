@@ -291,7 +291,7 @@ pub fn fold_line(s: &str) -> String {
     let mut rv = String::new();
     for (i, c) in s.chars().enumerate() {
         rv.push(c);
-        if i % 75 == 0 {
+        if i != 0 && i % 75 == 0 {
             rv.push_str("\r\n ");
         };
     };
