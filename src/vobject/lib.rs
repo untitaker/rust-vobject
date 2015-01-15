@@ -30,6 +30,11 @@ impl Property {
         }
     }
 
+    /// Create property from unescaped string.
+    pub fn new_from_string(s: &str) -> Property {
+        Property::new(HashMap::new(), escape_chars(s), None)
+    }
+
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
         unescape_chars(self.raw_value.as_slice())
