@@ -8,7 +8,8 @@ This is a parser and writer for the
 
 - It doesn't follow all relevant RFCs, and some fundamental things such as
   property encodings are missing.
-- The API is still quite unstable. This is an experiment by me to learn Rust.
+- The API is still quite unstable and the implementation inefficient. This is
+  an experiment by me to learn Rust.
 
 Nevertheless, I use it for [a simple addressbook
 script](https://github.com/untitaker/mates.rs), and you're encouraged to test
