@@ -233,6 +233,7 @@ pub fn write_component(c: &Component) -> String {
                 };
                 buf.push(':');
                 buf.push_str(fold_line(prop.raw_value.as_slice()).as_slice());
+                buf.push_str("\r\n");
             };
         };
 
