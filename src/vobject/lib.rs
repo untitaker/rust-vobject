@@ -22,7 +22,7 @@ pub struct Property {
 }
 
 impl Property {
-    fn new(params: HashMap<String, String>, raw_value: String, prop_group: Option<String>) -> Property {
+    pub fn new(params: HashMap<String, String>, raw_value: String, prop_group: Option<String>) -> Property {
         Property {
             params: params,
             raw_value: raw_value,
@@ -49,7 +49,7 @@ pub struct Component {
 }
 
 impl Component {
-    fn new(name: String) -> Component {
+    pub fn new(name: String) -> Component {
         Component {
             name: name,
             props: HashMap::new(),

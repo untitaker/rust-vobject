@@ -1,8 +1,8 @@
-# VObject parser for Rust
+# VObject parser and generator for Rust
 
 [![Build Status](https://travis-ci.org/untitaker/rust-vobject.svg?branch=master)](https://travis-ci.org/untitaker/rust-vobject)
 
-This is a parser and writer for the
+This is a parser and generator for the
 [vCard](https://tools.ietf.org/html/rfc6350) and
 [iCalendar](https://tools.ietf.org/html/rfc5545) formats.
 
