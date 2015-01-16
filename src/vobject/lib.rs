@@ -111,11 +111,11 @@ component -> Component
         rv
     }
 
-component_begin -> String
-    = "BEGIN:" v:value __ { v.to_string() }
+component_begin -> &'input str
+    = "BEGIN:" v:value __ { v }
 
-component_end -> String
-    = "END:" v:value __ { v.to_string() }
+component_end -> &'input str
+    = "END:" v:value __ { v }
 
 components -> Vec<Component>
     = cs:component ** eols __ { cs }
@@ -125,14 +125,14 @@ props -> Vec<(&'input str, Property)>
 
 prop -> (&'input str, Property)
     = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
-        (k, Property { params: p, raw_value: v, prop_group: g })
+        (k, Property { params: p, raw_value: v.to_string(), prop_group: g })
     }
 
 group -> String
-    = g:group_name "." { g }
+    = g:group_name "." { g.to_string() }
 
-group_name -> String
-    = group_char+ { match_str.to_string() }
+group_name -> &'input str
+    = group_char+ { match_str }
 
 name -> &'input str
     = iana_token+ { match_str }
@@ -162,8 +162,8 @@ param_value -> &'input str
 param_text -> &'input str
     = safe_char* { match_str }
 
-value -> String
-    = value_char+ { match_str.to_string() }
+value -> &'input str
+    = value_char+ { match_str }
 
 
 quoted_string -> &'input str
