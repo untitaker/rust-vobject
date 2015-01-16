@@ -95,75 +95,75 @@ peg! parser(r#"
 use super::{Component,Property};
 use std::collections::HashMap;
 
-#[pub]
-component -> Component
-    = name:component_begin
-      ps:props
-      cs:components
-      component_end {
-        let mut rv = Component::new(name);
-        rv.subcomponents = cs;
-
-        for (k, v) in ps.into_iter() {
-            rv.all_props_mut(k).push(v);
-        };
-
-        rv
-    }
-
-component_begin -> &'input str
-    = "BEGIN:" v:value __ { v }
-
-component_end -> &'input str
-    = "END:" v:value __ { v }
-
 components -> Vec<Component>
     = cs:component ** eols __ { cs }
+
+    #[pub]
+    component -> Component
+        = name:component_begin
+          ps:props
+          cs:components
+          component_end {
+            let mut rv = Component::new(name);
+            rv.subcomponents = cs;
+
+            for (k, v) in ps.into_iter() {
+                rv.all_props_mut(k).push(v);
+            };
+
+            rv
+        }
+
+    component_begin -> &'input str
+        = "BEGIN:" v:value __ { v }
+
+    component_end -> &'input str
+        = "END:" v:value __ { v }
 
 props -> Vec<(&'input str, Property)>
     = ps:prop ++ eols __ { ps }
 
-prop -> (&'input str, Property)
-    = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
-        (k, Property { params: p, raw_value: v.to_string(), prop_group: g })
-    }
+    prop -> (&'input str, Property)
+        = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
+            (k, Property { params: p, raw_value: v.to_string(), prop_group: g })
+        }
 
-group -> String
-    = g:group_name "." { g.to_string() }
+    group -> String
+        = g:group_name "." { g.to_string() }
 
-group_name -> &'input str
-    = group_char+ { match_str }
+        group_name -> &'input str
+            = group_char+ { match_str }
 
-name -> &'input str
-    = iana_token+ { match_str }
+    name -> &'input str
+        = iana_token+ { match_str }
 
-params -> HashMap<String, String>
-    = ps:(";" p:param {p})* {
-        let mut rv: HashMap<String, String> = HashMap::with_capacity(ps.len());
-        rv.extend(ps.into_iter().map(|(k, v)| (k.to_string(), v.to_string())));
-        rv
-    }
+    params -> HashMap<String, String>
+        = ps:(";" p:param {p})* {
+            let mut rv: HashMap<String, String> = HashMap::with_capacity(ps.len());
+            rv.extend(ps.into_iter().map(|(k, v)| (k.to_string(), v.to_string())));
+            rv
+        }
 
-param -> (&'input str, &'input str)
-    // FIXME: Doesn't handle comma-separated values
-    = k:param_name v:("=" v:param_value { v })? {
-        (k, match v {
-            Some(x) => x,
-            None => ""
-        })
-    }
+        param -> (&'input str, &'input str)
+            // FIXME: Doesn't handle comma-separated values
+            = k:param_name v:("=" v:param_value { v })? {
+                (k, match v {
+                    Some(x) => x,
+                    None => ""
+                })
+            }
 
-param_name -> &'input str
-    = iana_token+ { match_str }
+        param_name -> &'input str
+            = iana_token+ { match_str }
 
-param_value -> &'input str
-    = x:(quoted_string / param_text) { x }
+        param_value -> &'input str
+            = x:(quoted_string / param_text) { x }
 
-param_text -> &'input str
-    = safe_char* { match_str }
+        param_text -> &'input str
+            = safe_char* { match_str }
 
-value -> &'input str
-    = value_char+ { match_str }
+    value -> &'input str
+        = value_char+ { match_str }
 
 
 quoted_string -> &'input str
