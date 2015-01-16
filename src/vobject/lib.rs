@@ -50,9 +50,9 @@ pub struct Component {
 }
 
 impl Component {
-    pub fn new(name: String) -> Component {
+    pub fn new(name: &str) -> Component {
         Component {
-            name: name,
+            name: name.to_string(),
             props: HashMap::new(),
             subcomponents: vec![]
         }
