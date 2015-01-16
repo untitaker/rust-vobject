@@ -148,9 +148,7 @@ name -> &'input str
 params -> HashMap<String, String>
     = ps:(";" p:param {p})* {
         let mut rv: HashMap<String, String> = HashMap::with_capacity(ps.len());
-        for (k, v) in ps.into_iter() {
-            rv.insert(k.to_string(), v.to_string());
-        };
+        rv.extend(ps.into_iter().map(|(k, v)| (k.to_string(), v.to_string())));
         rv
     }
 
