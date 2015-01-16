@@ -22,17 +22,13 @@ pub struct Property {
 }
 
 impl Property {
-    pub fn new(params: HashMap<String, String>, raw_value: String, prop_group: Option<String>) -> Property {
-        Property {
-            params: params,
-            raw_value: raw_value,
-            prop_group: prop_group
-        }
-    }
-
     /// Create property from unescaped string.
-    pub fn new_from_string(s: &str) -> Property {
-        Property::new(HashMap::new(), escape_chars(s), None)
+    pub fn new(value: &str) -> Property {
+        Property {
+            params: HashMap::new(),
+            raw_value: escape_chars(value),
+            prop_group: None
+        }
     }
 
     /// Get value as unescaped string.
@@ -103,14 +99,10 @@ use std::collections::HashMap;
 component -> Component
     = name:component_begin
       ps:props
-      cs:components?
+      cs:components
       component_end {
         let mut rv = Component::new(name);
-
-        match cs {
-            Some(components) => { rv.subcomponents = components; },
-            None => ()
-        };
+        rv.subcomponents = cs;
 
         for (k, v) in ps.into_iter() {
             rv.all_props_mut(k).push(v);
@@ -126,14 +118,14 @@ component_end -> String
     = "END:" v:value __ { v.to_string() }
 
 components -> Vec<Component>
-    = cs:component ++ eols __ { cs }
+    = cs:component ** eols __ { cs }
 
 props -> Vec<(&'input str, Property)>
     = ps:prop ++ eols __ { ps }
 
 prop -> (&'input str, Property)
     = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
-        (k, Property::new(p, v, g))
+        (k, Property { params: p, raw_value: v, prop_group: g })
     }
 
 group -> String
