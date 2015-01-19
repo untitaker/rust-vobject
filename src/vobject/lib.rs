@@ -2,7 +2,7 @@
 
 #![allow(unstable)]
 #![feature(plugin)]
-#[plugin] extern crate peg_syntax_ext;
+#[plugin] #[no_link] extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
