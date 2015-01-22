@@ -90,6 +90,101 @@ impl Component {
     }
 }
 
+/// Parse a component. The error value is a human-readable message.
+pub fn parse_component(s: &str) -> Result<Component, String> {
+    // XXX: The unfolding should be worked into the PEG
+    // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
+    let unfolded = unfold_lines(s);
+    parser::component(unfolded.as_slice())
+}
+
+/// Write a component. The error value is a human-readable message.
+pub fn write_component(c: &Component) -> String {
+    fn inner(buf: &mut String, c: &Component) {
+        buf.push_str("BEGIN:");
+        buf.push_str(c.name.as_slice());
+        buf.push_str("\r\n");
+
+        for (prop_name, props) in c.props.iter() {
+            for prop in props.iter() {
+                match prop.prop_group {
+                    Some(ref x) => { buf.push_str(x.as_slice()); buf.push('.'); },
+                    None => ()
+                };
+                buf.push_str(prop_name.as_slice());
+                for (param_key, param_value) in prop.params.iter() {
+                    buf.push(';');
+                    buf.push_str(param_key.as_slice());
+                    buf.push('=');
+                    buf.push_str(param_value.as_slice());
+                };
+                buf.push(':');
+                buf.push_str(fold_line(prop.raw_value.as_slice()).as_slice());
+                buf.push_str("\r\n");
+            };
+        };
+
+        for subcomponent in c.subcomponents.iter() {
+            inner(buf, subcomponent);
+        };
+
+        buf.push_str("END:");
+        buf.push_str(c.name.as_slice());
+        buf.push_str("\r\n");
+    }
+
+    let mut buf = String::new();
+    inner(&mut buf, c);
+    buf
+}
+
+/// Escape text for a VObject property value.
+pub fn escape_chars(s: &str) -> String {
+    // Order matters! Lifted from icalendar.parser
+    // https://github.com/collective/icalendar/
+    s
+        .replace("\\N", "\n")
+        .replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+}
+
+/// Unescape text from a VObject property value.
+pub fn unescape_chars(s: &str) -> String {
+    // Order matters! Lifted from icalendar.parser
+    // https://github.com/collective/icalendar/
+    s
+        .replace("\\N", "\\n")
+        .replace("\r\n", "\n")
+        .replace("\\n", "\n")
+        .replace("\\,", ",")
+        .replace("\\;", ";")
+        .replace("\\\\", "\\")
+}
+
+/// Unfold contentline.
+pub fn unfold_lines(s: &str) -> String {
+    s
+        .replace("\r\n ", "").replace("\r\n\t", "")
+        .replace("\n ", "").replace("\n\t", "")
+        .replace("\r ", "").replace("\r\t", "")
+}
+
+/// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
+/// '\n' or '\r' in it.
+pub fn fold_line(s: &str) -> String {
+    let mut rv = String::new();
+    for (i, c) in s.chars().enumerate() {
+        rv.push(c);
+        if i != 0 && i % 75 == 0 {
+            rv.push_str("\r\n ");
+        };
+    };
+    rv
+}
+
 
 peg! parser(r#"
 use super::{Component,Property};
@@ -191,99 +286,3 @@ whitespace = " " / "\t"
 __ = (eol / whitespace)*
 
 "#);
-
-
-/// Parse a component. The error value is a human-readable message.
-pub fn parse_component(s: &str) -> Result<Component, String> {
-    // XXX: The unfolding should be worked into the PEG
-    // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
-    let unfolded = unfold_lines(s);
-    parser::component(unfolded.as_slice())
-}
-
-/// Write a component. The error value is a human-readable message.
-pub fn write_component(c: &Component) -> String {
-    fn inner(buf: &mut String, c: &Component) {
-        buf.push_str("BEGIN:");
-        buf.push_str(c.name.as_slice());
-        buf.push_str("\r\n");
-
-        for (prop_name, props) in c.props.iter() {
-            for prop in props.iter() {
-                match prop.prop_group {
-                    Some(ref x) => { buf.push_str(x.as_slice()); buf.push('.'); },
-                    None => ()
-                };
-                buf.push_str(prop_name.as_slice());
-                for (param_key, param_value) in prop.params.iter() {
-                    buf.push(';');
-                    buf.push_str(param_key.as_slice());
-                    buf.push('=');
-                    buf.push_str(param_value.as_slice());
-                };
-                buf.push(':');
-                buf.push_str(fold_line(prop.raw_value.as_slice()).as_slice());
-                buf.push_str("\r\n");
-            };
-        };
-
-        for subcomponent in c.subcomponents.iter() {
-            inner(buf, subcomponent);
-        };
-
-        buf.push_str("END:");
-        buf.push_str(c.name.as_slice());
-        buf.push_str("\r\n");
-    }
-
-    let mut buf = String::new();
-    inner(&mut buf, c);
-    buf
-}
-
-/// Escape text for a VObject property value.
-pub fn escape_chars(s: &str) -> String {
-    // Order matters! Lifted from icalendar.parser
-    // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\n")
-        .replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\r\n", "\\n")
-        .replace("\n", "\\n")
-}
-
-/// Unescape text from a VObject property value.
-pub fn unescape_chars(s: &str) -> String {
-    // Order matters! Lifted from icalendar.parser
-    // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\\n")
-        .replace("\r\n", "\n")
-        .replace("\\n", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
-}
-
-/// Unfold contentline.
-pub fn unfold_lines(s: &str) -> String {
-    s
-        .replace("\r\n ", "").replace("\r\n\t", "")
-        .replace("\n ", "").replace("\n\t", "")
-        .replace("\r ", "").replace("\r\t", "")
-}
-
-/// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
-/// '\n' or '\r' in it.
-pub fn fold_line(s: &str) -> String {
-    let mut rv = String::new();
-    for (i, c) in s.chars().enumerate() {
-        rv.push(c);
-        if i != 0 && i % 75 == 0 {
-            rv.push_str("\r\n ");
-        };
-    };
-    rv
-}
