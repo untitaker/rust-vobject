@@ -8,8 +8,11 @@ This is a parser and generator for the
 
 - It doesn't follow all relevant RFCs, and some fundamental things such as
   property encodings are missing.
-- The API is still quite unstable and the implementation inefficient. This is
-  an experiment by me to learn Rust.
+- Consequently, the API is still unstable, and it's hard to predict how it
+  would have to change if new RFCs are implemented.
+- It uses [a PEG parser generator](https://github.com/kevinmehall/rust-peg).
+  Performance is sufficient for most usecases, although it is really slow if
+  compiler optimizations are disabled.
 
 Nevertheless, I use it for [a simple addressbook
 script](https://github.com/untitaker/mates.rs), and you're encouraged to test
