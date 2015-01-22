@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-
+use std::str::FromStr;
 
 
 pub struct Property {
@@ -86,6 +86,16 @@ impl Component {
         match self.props.get(key) {
             Some(values) => values.as_slice(),
             None => EMPTY
+        }
+    }
+}
+
+impl FromStr for Component {
+    /// Same as `vobject::parse_component`, but without the error messages.
+    fn from_str(s: &str) -> Option<Component> {
+        match parse_component(s) {
+            Ok(x) => Some(x),
+            Err(_) => None
         }
     }
 }
