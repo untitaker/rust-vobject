@@ -17,4 +17,4 @@ name = "vobject"
 path = "src/vobject/lib.rs"
 
 [dependencies]
-peg = "0.1.3"
+peg = "*"
