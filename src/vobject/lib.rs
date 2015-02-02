@@ -1,7 +1,6 @@
 // DOCS
 
-#![allow(unstable)]
-#![feature(plugin)]
+#![feature(plugin,core,std_misc,collections)]
 #[plugin] #[no_link] extern crate peg_syntax_ext;
 
 use std::collections::HashMap;
