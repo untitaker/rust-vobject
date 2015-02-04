@@ -90,12 +90,11 @@ impl Component {
 }
 
 impl FromStr for Component {
+    type Err = String;
+
     /// Same as `vobject::parse_component`, but without the error messages.
-    fn from_str(s: &str) -> Option<Component> {
-        match parse_component(s) {
-            Ok(x) => Some(x),
-            Err(_) => None
-        }
+    fn from_str(s: &str) -> Result<Component, String> {
+        parse_component(s)
     }
 }
 
