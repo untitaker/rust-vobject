@@ -1,7 +1,7 @@
 // DOCS
 
-#![feature(plugin,core,std_misc,collections)]
-#[plugin] #[no_link] extern crate peg_syntax_ext;
+#![feature(plugin,core,collections)]
+#![plugin(peg_syntax_ext)]
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
