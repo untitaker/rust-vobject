@@ -16,6 +16,5 @@ license = "MIT"
 name = "vobject"
 path = "src/vobject/lib.rs"
 
-[dependencies.peg]
-git = "https://github.com/untitaker/rust-peg.git"
-branch = "more-breakages"
+[dependencies]
+peg = "*"
