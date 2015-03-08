@@ -1,6 +1,6 @@
 // DOCS
 
-#![feature(plugin,core,collections)]
+#![feature(plugin,core,collections,std_misc,unicode)]
 #![plugin(peg_syntax_ext)]
 
 use std::collections::HashMap;
