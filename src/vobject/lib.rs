@@ -239,7 +239,7 @@ impl ParseError {
 
     pub fn from_peg_error(e: parser::ParseError) -> Self {
         ParseError {
-            desc: stringify!(e).to_owned(),
+            desc: format!("{}", e).to_owned(),
             orig: Some(e)
         }
     }
