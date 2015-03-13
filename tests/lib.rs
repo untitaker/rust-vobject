@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(core)]
 extern crate vobject;
 use vobject::parse_component;
 use std::borrow::ToOwned;

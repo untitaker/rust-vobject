@@ -1,11 +1,14 @@
 // DOCS
 
-#![feature(plugin,core,collections,std_misc,unicode)]
+#![feature(plugin,core,collections,std_misc)]
 #![plugin(peg_syntax_ext)]
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
+use std::borrow::ToOwned;
 use std::str::FromStr;
+use std::fmt;
+use std::error::Error;
 
 
 pub struct Property {
@@ -94,23 +97,29 @@ impl FromStr for Component {
 
     /// Same as `vobject::parse_component`, but without the error messages.
     fn from_str(s: &str) -> Result<Component, String> {
-        parse_component(s)
+        match parse_component(s) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(e.into_string())
+        }
     }
 }
 
 /// Parse a component. The error value is a human-readable message.
-pub fn parse_component(s: &str) -> Result<Component, String> {
+pub fn parse_component(s: &str) -> ParseResult<Component> {
     // XXX: The unfolding should be worked into the PEG
     // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
     let unfolded = unfold_lines(s);
-    parser::component(unfolded.as_slice())
+    match parser::component(unfolded.as_slice()) {
+        Ok(x) => Ok(x),
+        Err(e) => Err(ParseError::from_peg_error(e))
+    }
 }
 
 /// Write a component. The error value is a human-readable message.
 pub fn write_component(c: &Component) -> String {
     fn inner(buf: &mut String, c: &Component) {
         buf.push_str("BEGIN:");
-        buf.push_str(c.name.as_slice());
+        buf.push_str(c.name.as_slice());&
         buf.push_str("\r\n");
 
         for (prop_name, props) in c.props.iter() {
@@ -191,6 +200,81 @@ pub fn fold_line(s: &str) -> String {
         };
     };
     rv
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct ParseError {
+    desc: String,
+    orig: Option<parser::ParseError>
+}
+
+pub type ParseResult<T> = Result<T, ParseError>;
+
+impl Error for ParseError {
+    fn description(&self) -> &str {
+        self.desc.as_slice()
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match self.parser_error() {
+            Some(x) => Some(&*x),
+            None => None
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.description().fmt(f)
+    }
+}
+
+impl ParseError {
+    pub fn new(desc: String, cause: Option<parser::ParseError>) -> Self {
+        ParseError {
+            desc: desc,
+            orig: cause
+        }
+    }
+
+    pub fn from_peg_error(e: parser::ParseError) -> Self {
+        ParseError {
+            desc: stringify!(e).to_owned(),
+            orig: Some(e)
+        }
+    }
+
+    pub fn into_string(self) -> String {
+        self.desc
+    }
+
+    /// Access the underlying parser error.
+    pub fn parser_error(&self) -> Option<&parser::ParseError> {
+        self.orig.as_ref()
+    }
+
+
+    /// The line where the error occured.
+    ///
+    /// The value might be warped because content lines are unfolded before the parser keeps track
+    /// of line numbers.
+    pub fn line(&self) -> Option<&usize> {
+        match self.parser_error() {
+            Some(e) => Some(&e.line),
+            None => None
+        }
+    }
+
+    /// The column where the error occured.
+    ///
+    /// The value might be warped because content lines are unfolded before the parser keeps track
+    /// of line numbers.
+    pub fn column(&self) -> Option<&usize> {
+        match self.parser_error() {
+            Some(e) => Some(&e.column),
+            None => None
+        }
+    }
 }
 
 
