@@ -39,6 +39,15 @@ impl Property {
     }
 }
 
+impl Clone for Property {
+    fn clone(&self) -> Self {
+        Property {
+            params: self.params.clone(),
+            raw_value: self.raw_value.clone(),
+            prop_group: self.prop_group.clone()
+        }
+    }
+}
 
 pub struct Component {
     /// The name of the component, such as `VCARD` or `VEVENT`.
