@@ -12,6 +12,9 @@ use std::error::Error;
 
 
 pub struct Property {
+    /// Key in component.
+    pub name: String,
+
     /// Parameters.
     pub params: HashMap<String, String>,
 
@@ -25,8 +28,9 @@ pub struct Property {
 
 impl Property {
     /// Create property from unescaped string.
-    pub fn new(value: &str) -> Property {
+    pub fn new(name: &str, value: &str) -> Property {
         Property {
+            name: name.to_owned(),
             params: HashMap::new(),
             raw_value: escape_chars(value),
             prop_group: None
@@ -42,6 +46,7 @@ impl Property {
 impl Clone for Property {
     fn clone(&self) -> Self {
         Property {
+            name: self.name.clone(),
             params: self.params.clone(),
             raw_value: self.raw_value.clone(),
             prop_group: self.prop_group.clone()
@@ -321,7 +326,7 @@ props -> Vec<(&'input str, Property)>
 
     prop -> (&'input str, Property)
         = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
-            (k, Property { params: p, raw_value: v.to_string(), prop_group: g })
+            (k, Property { name: k.to_string(), params: p, raw_value: v.to_string(), prop_group: g })
         }
 
     group -> String
