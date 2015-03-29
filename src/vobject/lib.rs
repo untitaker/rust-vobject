@@ -1,6 +1,6 @@
 // DOCS
 
-#![feature(plugin,core,collections,std_misc)]
+#![feature(plugin,collections,str_char)]
 #![plugin(peg_syntax_ext)]
 
 use std::collections::HashMap;
@@ -39,7 +39,7 @@ impl Property {
 
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
-        unescape_chars(self.raw_value.as_slice())
+        unescape_chars(&self.raw_value[..])
     }
 }
 
@@ -100,7 +100,7 @@ impl Component {
     pub fn all_props(&self, key: &str) -> &[Property] {
         static EMPTY: &'static [Property] = &[];
         match self.props.get(key) {
-            Some(values) => values.as_slice(),
+            Some(values) => &values[..],
             None => EMPTY
         }
     }
@@ -123,7 +123,7 @@ pub fn parse_component(s: &str) -> ParseResult<Component> {
     // XXX: The unfolding should be worked into the PEG
     // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
     let unfolded = unfold_lines(s);
-    match parser::component(unfolded.as_slice()) {
+    match parser::component(&unfolded[..]) {
         Ok(x) => Ok(x),
         Err(e) => Err(ParseError::from_peg_error(e))
     }
@@ -133,24 +133,24 @@ pub fn parse_component(s: &str) -> ParseResult<Component> {
 pub fn write_component(c: &Component) -> String {
     fn inner(buf: &mut String, c: &Component) {
         buf.push_str("BEGIN:");
-        buf.push_str(c.name.as_slice());&
+        buf.push_str(&c.name[..]);
         buf.push_str("\r\n");
 
         for (prop_name, props) in c.props.iter() {
             for prop in props.iter() {
                 match prop.prop_group {
-                    Some(ref x) => { buf.push_str(x.as_slice()); buf.push('.'); },
+                    Some(ref x) => { buf.push_str(&x[..]); buf.push('.'); },
                     None => ()
                 };
-                buf.push_str(prop_name.as_slice());
+                buf.push_str(&prop_name[..]);
                 for (param_key, param_value) in prop.params.iter() {
                     buf.push(';');
-                    buf.push_str(param_key.as_slice());
+                    buf.push_str(&param_key[..]);
                     buf.push('=');
-                    buf.push_str(param_value.as_slice());
+                    buf.push_str(&param_value[..]);
                 };
                 buf.push(':');
-                buf.push_str(fold_line(prop.raw_value.as_slice()).as_slice());
+                buf.push_str(&fold_line(&prop.raw_value[..])[..]);
                 buf.push_str("\r\n");
             };
         };
@@ -160,7 +160,7 @@ pub fn write_component(c: &Component) -> String {
         };
 
         buf.push_str("END:");
-        buf.push_str(c.name.as_slice());
+        buf.push_str(&c.name[..]);
         buf.push_str("\r\n");
     }
 
@@ -226,7 +226,7 @@ pub type ParseResult<T> = Result<T, ParseError>;
 
 impl Error for ParseError {
     fn description(&self) -> &str {
-        self.desc.as_slice()
+        &self.desc[..]
     }
 
     fn cause(&self) -> Option<&Error> {
