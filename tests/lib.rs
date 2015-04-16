@@ -1,4 +1,3 @@
-#![feature(core)]
 extern crate vobject;
 use vobject::parse_component;
 use std::borrow::ToOwned;
@@ -28,7 +27,7 @@ fn test_vcard_basic() {
     assert_eq!(item.single_prop("FN").unwrap().raw_value, s!("Erika Mustermann"));
     assert_eq!(item.single_prop("N").unwrap().raw_value,  s!("Mustermann;Erika"));
 
-    let mut tel_values = item.all_props("TEL").iter().map(|x| x.raw_value.as_slice());
+    let mut tel_values = item.all_props("TEL").iter().map(|x| &x.raw_value[..]);
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 9999123"));
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 1234567"));
     assert!(tel_values.next().is_none());
