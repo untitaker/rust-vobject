@@ -1,8 +1,5 @@
 // DOCS
 
-#![feature(plugin,collections,str_char)]
-#![plugin(peg_syntax_ext)]
-
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::borrow::ToOwned;
@@ -66,9 +63,9 @@ pub struct Component {
 }
 
 impl Component {
-    pub fn new(name: &str) -> Component {
+    pub fn new<T: Into<String>>(name: T) -> Component {
         Component {
-            name: name.to_string(),
+            name: name.into(),
             props: HashMap::new(),
             subcomponents: vec![]
         }
@@ -89,8 +86,8 @@ impl Component {
 
     /// Retrieve a mutable vector of properties for this key. Creates one (and inserts it into the
     /// component) if none exists.
-    pub fn all_props_mut(&mut self, key: &str) -> &mut Vec<Property> {
-        match self.props.entry(String::from_str(key)) {
+    pub fn all_props_mut<T: Into<String>>(&mut self, key: T) -> &mut Vec<Property> {
+        match self.props.entry(key.into()) {
             Occupied(values) => values.into_mut(),
             Vacant(values) => values.insert(vec![])
         }
@@ -118,14 +115,248 @@ impl FromStr for Component {
     }
 }
 
-/// Parse a component. The error value is a human-readable message.
+
+
+struct Parser<'s> {
+    pub input: &'s str,
+    pub pos: usize,
+}
+
+impl<'s> Parser<'s> {
+    pub fn new<'a>(input: &'a str) -> Parser<'a> {
+        Parser {
+            input: input,
+            pos: 0,
+        }
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.input[self.pos..].chars().next()
+    }
+
+    pub fn eof(&self) -> bool {
+        self.pos >= self.input.len()
+    }
+
+    fn assert_char(&self, c: char) -> ParseResult<()> {
+        let real_c = match self.peek() {
+            Some(x) => x,
+            None => return Err(ParseError::new(format!("Expected {}, found EOL", c))),
+        };
+
+        if real_c != c {
+            return Err(ParseError::new(format!("Expected {}, found {}", c, real_c)))
+        };
+
+        Ok(())
+    }
+
+    fn consume_char(&mut self) -> Option<char> {
+        match self.peek() {
+            Some(x) => { self.pos += x.len_utf8(); Some(x) },
+            None => None
+        }
+    }
+
+    fn consume_eol(&mut self) -> ParseResult<()> {
+        
+        let start_pos = self.pos;
+
+        let consumed = match self.consume_char() {
+            Some('\n') => true,
+            Some('\r') => match self.consume_char() {
+                Some('\n') => true,
+                _ => false,
+            },
+            _ => false,
+        };
+            
+        if consumed {
+            Ok(())
+        } else {
+            self.pos = start_pos;
+            Err(ParseError::new("Expected EOL."))
+        }
+    }
+
+    fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
+        if !self.eof() {
+            try!(self.consume_eol());
+            while let Ok(_) = self.consume_eol() {};
+        };
+
+        Ok(())
+    }
+
+    fn consume_while<'a, F: Fn(char) -> bool>(&'a mut self, test: F) -> &'a str {
+        let start_pos = self.pos;
+        while !self.eof() && test(self.peek().unwrap()) {
+            self.consume_char();
+        }
+        &self.input[start_pos..self.pos]
+    }
+
+    pub fn consume_property(&mut self) -> ParseResult<Property> {
+        let group = self.consume_property_group().ok();
+        let name = try!(self.consume_property_name());
+        let params = self.consume_params();
+
+        try!(self.assert_char(':'));
+        self.consume_char();
+
+        let value = try!(self.consume_property_value());
+
+        Ok(Property {
+            name: name,
+            params: params,
+            raw_value: value,
+            prop_group: group,
+        })
+    }
+
+    fn consume_property_name<'a>(&'a mut self) -> ParseResult<String> {
+        let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
+        if rv.len() == 0 {
+            Err(ParseError::new("No property name found."))
+        } else {
+            Ok(rv.to_owned())
+        }
+    }
+
+    fn consume_property_group<'a>(&'a mut self) -> ParseResult<String> {
+        let start_pos = self.pos;
+        let name = self.consume_property_name();
+
+        let e = match name {
+            Ok(name) => match self.assert_char('.') {
+                Ok(_) => {
+                    self.consume_char();
+                    return Ok(name);
+                },
+                Err(e) => Err(e),
+            },
+            Err(e) => Err(e),
+        };
+
+        self.pos = start_pos;
+        e
+    }
+
+    fn consume_property_value<'a>(&'a mut self) -> ParseResult<String> {
+        let mut rv = String::new();
+        loop {
+            rv.push_str(self.consume_while(|x| x != '\r' && x != '\n'));
+            try!(self.sloppy_terminate_line());
+
+            match self.peek() {
+                Some(' ') | Some('\t') => self.consume_char(),
+                _ => break,
+            };
+        }
+        Ok(rv)
+    }
+
+    fn consume_param_name<'a>(&'a mut self) -> ParseResult<String> {
+        match self.consume_property_name() {
+            Ok(x) => Ok(x),
+            Err(e) => Err(ParseError::new(format!("No param name found: {}", e))),
+        }
+    }
+
+    fn consume_param_value<'a>(&'a mut self) -> ParseResult<String> {
+        let qsafe = |x| {
+            x != '"' &&
+            x != '\r' &&
+            x != '\n' &&
+            x != '\u{7F}' &&
+            x > '\u{1F}'
+        };
+
+        if self.peek() == Some('"') {
+            self.consume_char();
+            let rv = self.consume_while(qsafe).to_owned();
+            try!(self.assert_char('"'));
+            self.consume_char();
+            Ok(rv)
+        } else {
+            Ok(self.consume_while(|x| qsafe(x) && x != ';' && x != ':').to_owned())
+        }
+    }
+
+    fn consume_param<'a>(&'a mut self) -> ParseResult<(String, String)> {
+        let name = try!(self.consume_param_name());
+        let value = if self.peek() == Some('=') {
+            let start_pos = self.pos;
+            self.consume_char();
+            match self.consume_param_value() {
+                Ok(x) => x,
+                Err(e) => { self.pos = start_pos; return Err(e); }
+            }
+        } else {
+            String::new()
+        };
+
+        Ok((name, value))
+    }
+
+    fn consume_params(&mut self) -> HashMap<String, String> {
+        let mut rv: HashMap<String, String> = HashMap::new();
+        while self.peek() == Some(';') {
+            self.consume_char();
+            match self.consume_param() {
+                Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
+                Err(_) => break,
+            }
+        };
+        rv
+    }
+
+    fn consume_component(&mut self) -> ParseResult<Component> {
+        let begin_pos = self.pos;
+        let mut property = try!(self.consume_property());
+        if property.name != "BEGIN" {
+            self.pos = begin_pos;
+            return Err(ParseError::new("Expected BEGIN tag."));
+        };
+
+        let c_name = property.raw_value;
+        let mut component = Component::new(&c_name[..]);
+
+        loop {
+            let previous_pos = self.pos;
+            property = try!(self.consume_property());
+            if property.name == "BEGIN" {
+                self.pos = previous_pos;
+                while let Ok(subcomponent) = self.consume_component() {
+                    component.subcomponents.push(subcomponent);
+                };
+            } else if property.name == "END" {
+                if property.raw_value != c_name {
+                    self.pos = begin_pos;
+                    return Err(ParseError::new(format!(
+                        "Mismatched tags: BEGIN:{} vs END:{}",
+                        c_name, property.raw_value
+                    )));
+                };
+
+                break;
+            } else {
+                component.all_props_mut(property.name.to_owned()).push(property);
+            }
+        };
+
+        Ok(component)
+    }
+}
+
+/// Parse exactly one component. Trailing data generates errors.
 pub fn parse_component(s: &str) -> ParseResult<Component> {
-    // XXX: The unfolding should be worked into the PEG
-    // See feature request: https://github.com/kevinmehall/rust-peg/issues/26
-    let unfolded = unfold_lines(s);
-    match parser::component(&unfolded[..]) {
-        Ok(x) => Ok(x),
-        Err(e) => Err(ParseError::from_peg_error(e))
+    let mut parser = Parser::new(s);
+    let rv = try!(parser.consume_component());
+    if !parser.eof() {
+        Err(ParseError::new(format!("Trailing data: `{}`", &parser.input[parser.pos..])))
+    } else {
+        Ok(rv)
     }
 }
 
@@ -195,14 +426,6 @@ pub fn unescape_chars(s: &str) -> String {
         .replace("\\\\", "\\")
 }
 
-/// Unfold contentline.
-pub fn unfold_lines(s: &str) -> String {
-    s
-        .replace("\r\n ", "").replace("\r\n\t", "")
-        .replace("\n ", "").replace("\n\t", "")
-        .replace("\r ", "").replace("\r\t", "")
-}
-
 /// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
 /// '\n' or '\r' in it.
 pub fn fold_line(s: &str) -> String {
@@ -218,8 +441,7 @@ pub fn fold_line(s: &str) -> String {
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct ParseError {
-    desc: String,
-    orig: Option<parser::ParseError>
+    desc: String
 }
 
 pub type ParseResult<T> = Result<T, ParseError>;
@@ -230,10 +452,7 @@ impl Error for ParseError {
     }
 
     fn cause(&self) -> Option<&Error> {
-        match self.parser_error() {
-            Some(x) => Some(&*x),
-            None => None
-        }
+        None
     }
 }
 
@@ -244,151 +463,13 @@ impl fmt::Display for ParseError {
 }
 
 impl ParseError {
-    pub fn new(desc: String, cause: Option<parser::ParseError>) -> Self {
+    pub fn new<T: Into<String>>(desc: T) -> Self {
         ParseError {
-            desc: desc,
-            orig: cause
-        }
-    }
-
-    pub fn from_peg_error(e: parser::ParseError) -> Self {
-        ParseError {
-            desc: format!("{}", e).to_owned(),
-            orig: Some(e)
+            desc: desc.into(),
         }
     }
 
     pub fn into_string(self) -> String {
         self.desc
     }
-
-    /// Access the underlying parser error.
-    pub fn parser_error(&self) -> Option<&parser::ParseError> {
-        self.orig.as_ref()
-    }
-
-
-    /// The line where the error occured.
-    ///
-    /// The value might be warped because content lines are unfolded before the parser keeps track
-    /// of line numbers.
-    pub fn line(&self) -> Option<&usize> {
-        match self.parser_error() {
-            Some(e) => Some(&e.line),
-            None => None
-        }
-    }
-
-    /// The column where the error occured.
-    ///
-    /// The value might be warped because content lines are unfolded before the parser keeps track
-    /// of line numbers.
-    pub fn column(&self) -> Option<&usize> {
-        match self.parser_error() {
-            Some(e) => Some(&e.column),
-            None => None
-        }
-    }
 }
-
-
-peg! parser(r#"
-use super::{Component,Property};
-use std::collections::HashMap;
-
-components -> Vec<Component>
-    = cs:component ** eols __ { cs }
-
-    #[pub]
-    component -> Component
-        = name:component_begin
-          ps:props
-          cs:components
-          component_end {
-            let mut rv = Component::new(name);
-            rv.subcomponents = cs;
-
-            for (k, v) in ps.into_iter() {
-                rv.all_props_mut(k).push(v);
-            };
-
-            rv
-        }
-
-    component_begin -> &'input str
-        = "BEGIN:" v:value __ { v }
-
-    component_end -> &'input str
-        = "END:" v:value __ { v }
-
-props -> Vec<(&'input str, Property)>
-    = ps:prop ++ eols __ { ps }
-
-    prop -> (&'input str, Property)
-        = !"BEGIN:" !"END:" g:group? k:name p:params ":" v:value {
-            (k, Property { name: k.to_string(), params: p, raw_value: v.to_string(), prop_group: g })
-        }
-
-    group -> String
-        = g:group_name "." { g.to_string() }
-
-        group_name -> &'input str
-            = group_char+ { match_str }
-
-    name -> &'input str
-        = iana_token+ { match_str }
-
-    params -> HashMap<String, String>
-        = ps:(";" p:param {p})* {
-            let mut rv: HashMap<String, String> = HashMap::with_capacity(ps.len());
-            rv.extend(ps.into_iter().map(|(k, v)| (k.to_string(), v.to_string())));
-            rv
-        }
-
-        param -> (&'input str, &'input str)
-            // FIXME: Doesn't handle comma-separated values
-            = k:param_name v:("=" v:param_value { v })? {
-                (k, match v {
-                    Some(x) => x,
-                    None => ""
-                })
-            }
-
-        param_name -> &'input str
-            = iana_token+ { match_str }
-
-        param_value -> &'input str
-            = x:(quoted_string / param_text) { x }
-
-        param_text -> &'input str
-            = safe_char* { match_str }
-
-    value -> &'input str
-        = value_char+ { match_str }
-
-
-quoted_string -> &'input str
-    = dquote x:quoted_content dquote { x }
-
-quoted_content -> &'input str
-    = qsafe_char* { match_str }
-
-iana_token = ([a-zA-Z0-9] / "-")+
-group_char = ([a-zA-Z0-9] / "-")
-qsafe_char = !dquote !ctl value_char
-safe_char = !";" !":" qsafe_char
-
-value_char = !eol .
-
-eol = "\r\n" / "\n" / "\r"
-dquote = "\""
-eols = eol+
-
-// Taken from vCard. vCalendar's is a subset. Together with the definition of "qsafe_char" this
-// might reject a bunch of valid iCalendars, but I can't imagine one.
-ctl = [\u{00}-\u{1F}] / "\u{7F}"
-
-whitespace = " " / "\t"
-__ = (eol / whitespace)*
-
-"#);

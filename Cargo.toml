@@ -15,6 +15,3 @@ license = "MIT"
 [lib]
 name = "vobject"
 path = "src/vobject/lib.rs"
-
-[dependencies]
-peg = "*"
