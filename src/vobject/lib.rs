@@ -104,14 +104,11 @@ impl Component {
 }
 
 impl FromStr for Component {
-    type Err = String;
+    type Err = ParseError;
 
     /// Same as `vobject::parse_component`, but without the error messages.
-    fn from_str(s: &str) -> Result<Component, String> {
-        match parse_component(s) {
-            Ok(x) => Ok(x),
-            Err(e) => Err(e.into_string())
-        }
+    fn from_str(s: &str) -> ParseResult<Component> {
+        parse_component(s)
     }
 }
 
