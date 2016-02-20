@@ -184,6 +184,15 @@ impl<'s> Parser<'s> {
         }
     }
 
+    /// If next peeked char is the given `c`, consume it and return `true`,
+    /// otherwise return `false`.
+    fn consume_only_char(&mut self, c: char) -> bool {
+        match self.peek_at(0) {
+            Some((d, offset)) if d == c => {self.pos += offset; true},
+            _ => false
+        }
+    }
+
     fn consume_eol(&mut self) -> ParseResult<()> {
         
         let start_pos = self.pos;
@@ -317,8 +326,7 @@ impl<'s> Parser<'s> {
             x > '\u{1F}'
         };
 
-        if self.peek() == Some(('"', 1)) {
-            self.consume_char();
+        if self.consume_only_char('"') {
             let rv = self.consume_while(qsafe);
             try!(self.assert_char('"'));
             self.consume_char();
@@ -330,9 +338,8 @@ impl<'s> Parser<'s> {
 
     fn consume_param<'a>(&'a mut self) -> ParseResult<(String, String)> {
         let name = try!(self.consume_param_name());
-        let value = if self.peek() == Some(('=', 1)) {
-            let start_pos = self.pos;
-            self.consume_char();
+        let start_pos = self.pos;
+        let value = if self.consume_only_char('=') {
             match self.consume_param_value() {
                 Ok(x) => x,
                 Err(e) => { self.pos = start_pos; return Err(e); }
@@ -346,8 +353,7 @@ impl<'s> Parser<'s> {
 
     fn consume_params(&mut self) -> HashMap<String, String> {
         let mut rv: HashMap<String, String> = HashMap::new();
-        while self.peek() == Some((';', 1)) {
-            self.consume_char();
+        while self.consume_only_char(';') {
             match self.consume_param() {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
                 Err(_) => break,
@@ -560,6 +566,17 @@ mod tests {
         assert_eq!(p.consume_while(|x| x != ':'), "foo");
         assert_eq!(p.consume_char(), Some(':'));
         assert_eq!(p.consume_while(|x| x != '\n'), "bar");
+    }
+
+    #[test]
+    fn test_consume_only_char() {
+        let mut p = Parser{input:"\n \"bar", pos: 0};
+        assert!(p.consume_only_char('"'));
+        assert_eq!(p.pos, 3);
+        assert!(!p.consume_only_char('"'));
+        assert_eq!(p.pos, 3);
+        assert!(p.consume_only_char('b'));
+        assert_eq!(p.pos, 4);
     }
 
 }
