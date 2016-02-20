@@ -40,6 +40,8 @@ fn test_line_cont() {
         VERSION:2.1\n\
         N;ENCODING=QUOTED-PRINTABLE:Nikdo;Nikdo=\n\t\
         vic\n\
+        FN;ENCODING=QUOTED-PRINT\n \
+        ABLE:Alice;Alice=vic\n\
         NOTE:This ends with equal sign=\n\
         TEL;WORK:5555\n \
         4444\n\
@@ -48,6 +50,7 @@ fn test_line_cont() {
     assert_eq!(item.name, s!("VCARD"));
     assert_eq!(item.single_prop("TEL").unwrap().raw_value, s!("55554444"));
     assert_eq!(item.single_prop("N").unwrap().raw_value, s!("Nikdo;Nikdo=vic"));
+    assert_eq!(item.single_prop("FN").unwrap().raw_value, s!("Alice;Alice=vic"));
 }
 
 #[test]
@@ -78,6 +81,37 @@ fn test_icalendar_basic() {
     assert_eq!(event.name, s!("VEVENT"));
     assert!(event.single_prop("ORGANIZER").is_some());
     assert_eq!(event.single_prop("LOCATION").unwrap().raw_value, s!("Somewhere"));
+}
+
+#[test]
+fn test_icalendar_multline() {
+    // Adapted from a very popular provider's export
+    // this used to give ParseError { desc: "Expected :, found \n" }
+    let event = parse_component(
+        "BEGIN:VEVENT\n\
+        ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jo\n \
+        hn Doe;X-NUM-GUESTS=0:mailto:jd@cal.test\n\
+        SUMMARY:Important meeting\n\
+        END:VEVENT\n").unwrap();
+
+    assert_eq!(event.name, s!("VEVENT"));
+    assert_eq!(event.single_prop("SUMMARY").unwrap().raw_value,
+               s!("Important meeting"));
+}
+
+#[test]
+fn test_icalendar_multline2() {
+    // Adapted from a very popular provider's export
+    // this used to give ParseError { desc: "No property name found." }
+    let event = parse_component(
+        "BEGIN:VCALENDAR\n\
+        BEGIN:VEVENT\n\
+        ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Jo\n \
+        hn Doe;X-NUM-GUESTS=0:mailto:jd@cal.test\n\
+        SUMMARY:Important meeting\n\
+        END:VEVENT\n\
+        END:VCALENDAR\n").unwrap();
+
 }
 
 #[test]

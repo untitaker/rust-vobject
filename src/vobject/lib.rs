@@ -127,8 +127,37 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn peek(&self) -> Option<char> {
-        self.input[self.pos..].chars().next()
+    /// look-ahead for next char at given offset from current position
+    /// (self.pos), taking [line unfolding]
+    /// (https://tools.ietf.org/html/rfc5545#section-3.1) into account,
+    /// without actually
+    /// consuming it (immutable self).
+    ///
+    /// Return an option for next char, and needed increment to consume it
+    /// from current position.
+    /// CR characters get always skipped, resulting in CRLF to be simplified as
+    /// LF, which seems to be acceptable because
+    /// - the remainders of the lib do accept a lone LF as a line termination
+    ///   (a bit laxer than RFC 5545)
+    /// - CR alone [is not acceptable content]
+    ///   (https://tools.ietf.org/html/rfc5545#section-3.1)
+    fn peek_at(&self, at: usize) -> Option<(char, usize)> {
+        match self.input[self.pos+at..].chars().next() {
+            None => None,
+            Some('\r') => self.peek_at(at + 1),
+            Some('\n') => {
+                match self.peek_at(at + 1) {
+                    Some((' ', offset)) | Some(('\t', offset)) =>
+                        self.peek_at(offset),
+                    _ => Some(('\n', at + 1))
+                }
+            },
+            Some(x) => { Some((x, at + x.len_utf8())) }
+        }
+    }
+
+    fn peek(&self) -> Option<(char, usize)> {
+        self.peek_at(0)
     }
 
     pub fn eof(&self) -> bool {
@@ -137,7 +166,7 @@ impl<'s> Parser<'s> {
 
     fn assert_char(&self, c: char) -> ParseResult<()> {
         let real_c = match self.peek() {
-            Some(x) => x,
+            Some((x, _)) => x,
             None => return Err(ParseError::new(format!("Expected {}, found EOL", c))),
         };
 
@@ -149,8 +178,8 @@ impl<'s> Parser<'s> {
     }
 
     fn consume_char(&mut self) -> Option<char> {
-        match self.peek() {
-            Some(x) => { self.pos += x.len_utf8(); Some(x) },
+        match self.peek_at(0) {
+            Some((c, offset)) => { self.pos += offset; Some(c) },
             None => None
         }
     }
@@ -185,12 +214,39 @@ impl<'s> Parser<'s> {
         Ok(())
     }
 
-    fn consume_while<'a, F: Fn(char) -> bool>(&'a mut self, test: F) -> &'a str {
-        let start_pos = self.pos;
-        while !self.eof() && test(self.peek().unwrap()) {
-            self.consume_char();
+    // GR this used to return just a slice from input, but line unfolding
+    // makes it contradictory, unless one'd want to rescan everything.
+    // Since actually useful calls used to_owned() on the result, which
+    // does copy into a String's buffer, let's create a String right away
+    // implementation detail : instead of pushing char after char, we
+    // do it by the biggest contiguous slices possible, because I believe it
+    // to be more efficient (less checks for reallocation etc).
+    fn consume_while<'a, F: Fn(char) -> bool>(&'a mut self, test: F) -> String {
+        let mut sl_start_pos = self.pos;
+        let mut res = String::new();
+        while !self.eof() {
+            match self.peek() {
+                Some((c, offset)) => {
+                    if !test(c) {
+                        break
+                    } else {
+                        if offset > c.len_utf8() {
+                            // we have some skipping and therefore need to flush
+                            res.push_str(&self.input[sl_start_pos..self.pos]);
+                            res.push(c);
+                            sl_start_pos = self.pos + offset;
+                        }
+                        self.pos += offset;
+                    }
+                },
+                _ => break
+            }
         }
-        &self.input[start_pos..self.pos]
+        // Final flush
+        if sl_start_pos < self.pos {
+            res.push_str(&self.input[sl_start_pos..self.pos])
+        }
+        res
     }
 
     pub fn consume_property(&mut self) -> ParseResult<Property> {
@@ -216,7 +272,7 @@ impl<'s> Parser<'s> {
         if rv.len() == 0 {
             Err(ParseError::new("No property name found."))
         } else {
-            Ok(rv.to_owned())
+            Ok(rv)
         }
     }
 
@@ -240,16 +296,8 @@ impl<'s> Parser<'s> {
     }
 
     fn consume_property_value<'a>(&'a mut self) -> ParseResult<String> {
-        let mut rv = String::new();
-        loop {
-            rv.push_str(self.consume_while(|x| x != '\r' && x != '\n'));
-            try!(self.sloppy_terminate_line());
-
-            match self.peek() {
-                Some(' ') | Some('\t') => self.consume_char(),
-                _ => break,
-            };
-        }
+        let rv = self.consume_while(|x| x != '\r' && x != '\n');
+        try!(self.sloppy_terminate_line());
         Ok(rv)
     }
 
@@ -269,20 +317,20 @@ impl<'s> Parser<'s> {
             x > '\u{1F}'
         };
 
-        if self.peek() == Some('"') {
+        if self.peek() == Some(('"', 1)) {
             self.consume_char();
-            let rv = self.consume_while(qsafe).to_owned();
+            let rv = self.consume_while(qsafe);
             try!(self.assert_char('"'));
             self.consume_char();
             Ok(rv)
         } else {
-            Ok(self.consume_while(|x| qsafe(x) && x != ';' && x != ':').to_owned())
+            Ok(self.consume_while(|x| qsafe(x) && x != ';' && x != ':'))
         }
     }
 
     fn consume_param<'a>(&'a mut self) -> ParseResult<(String, String)> {
         let name = try!(self.consume_param_name());
-        let value = if self.peek() == Some('=') {
+        let value = if self.peek() == Some(('=', 1)) {
             let start_pos = self.pos;
             self.consume_char();
             match self.consume_param_value() {
@@ -298,7 +346,7 @@ impl<'s> Parser<'s> {
 
     fn consume_params(&mut self) -> HashMap<String, String> {
         let mut rv: HashMap<String, String> = HashMap::new();
-        while self.peek() == Some(';') {
+        while self.peek() == Some((';', 1)) {
             self.consume_char();
             match self.consume_param() {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
@@ -470,3 +518,49 @@ impl ParseError {
         self.desc
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Parser;
+
+    #[test]
+    fn test_unfold1() {
+        let mut p = Parser{input: "ab\r\n c", pos: 2};
+        assert_eq!(p.consume_char(), Some('c'));
+        assert_eq!(p.pos, 6);
+    }
+
+    #[test]
+    fn test_unfold2() {
+        let mut p = Parser{input: "ab\n\tc\nx", pos: 2};
+        assert_eq!(p.consume_char(), Some('c'));
+        assert_eq!(p.consume_char(), Some('\n'));
+        assert_eq!(p.consume_char(), Some('x'));
+    }
+
+    #[test]
+    fn test_consume_while() {
+        let mut p = Parser{input:"af\n oo:bar", pos: 1};
+        assert_eq!(p.consume_while(|x| x != ':'), "foo");
+        assert_eq!(p.consume_char(), Some(':'));
+        assert_eq!(p.consume_while(|x| x != '\n'), "bar");
+    }
+
+    #[test]
+    fn test_consume_while2() {
+        let mut p = Parser{input:"af\n oo\n\t:bar", pos: 1};
+        assert_eq!(p.consume_while(|x| x != ':'), "foo");
+        assert_eq!(p.consume_char(), Some(':'));
+        assert_eq!(p.consume_while(|x| x != '\n'), "bar");
+    }
+
+    #[test]
+    fn test_consume_while3() {
+        let mut p = Parser{input:"af\n oo:\n bar", pos: 1};
+        assert_eq!(p.consume_while(|x| x != ':'), "foo");
+        assert_eq!(p.consume_char(), Some(':'));
+        assert_eq!(p.consume_while(|x| x != '\n'), "bar");
+    }
+
+}
+
