@@ -112,6 +112,7 @@ fn test_icalendar_multline2() {
         END:VEVENT\n\
         END:VCALENDAR\n").unwrap();
 
+    assert_eq!(event.name, s!("VCALENDAR"));
 }
 
 #[test]
