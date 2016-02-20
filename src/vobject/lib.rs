@@ -156,6 +156,7 @@ impl<'s> Parser<'s> {
         }
     }
 
+    #[inline]
     fn peek(&self) -> Option<(char, usize)> {
         self.peek_at(0)
     }
@@ -178,7 +179,7 @@ impl<'s> Parser<'s> {
     }
 
     fn consume_char(&mut self) -> Option<char> {
-        match self.peek_at(0) {
+        match self.peek() {
             Some((c, offset)) => { self.pos += offset; Some(c) },
             None => None
         }
@@ -187,7 +188,7 @@ impl<'s> Parser<'s> {
     /// If next peeked char is the given `c`, consume it and return `true`,
     /// otherwise return `false`.
     fn consume_only_char(&mut self, c: char) -> bool {
-        match self.peek_at(0) {
+        match self.peek() {
             Some((d, offset)) if d == c => {self.pos += offset; true},
             _ => false
         }
