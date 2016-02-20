@@ -231,7 +231,7 @@ impl<'s> Parser<'s> {
     // implementation detail : instead of pushing char after char, we
     // do it by the biggest contiguous slices possible, because I believe it
     // to be more efficient (less checks for reallocation etc).
-    fn consume_while<'a, F: Fn(char) -> bool>(&'a mut self, test: F) -> String {
+    fn consume_while<F: Fn(char) -> bool>(&mut self, test: F) -> String {
         let mut sl_start_pos = self.pos;
         let mut res = String::new();
         while !self.eof() {
