@@ -24,3 +24,6 @@ upload:
 	echo '<!doctype html><title>rust-vobject</title><meta http-equiv="refresh" content="0; ./vobject/">' \
 		> ./target/doc/index.htm
 	rsync -av --chmod=755 ./target/doc/ untispace:~/virtual/rust-vobject.unterwaditzer.net/
+
+clippy:
+	cargo build --features=clippy

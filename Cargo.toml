@@ -15,3 +15,6 @@ license = "MIT"
 [lib]
 name = "vobject"
 path = "src/vobject/lib.rs"
+
+[dependencies]
+clippy = {git = "https://github.com/Manishearth/rust-clippy", version = "*", optional = true}

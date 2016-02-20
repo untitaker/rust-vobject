@@ -1,5 +1,10 @@
 // DOCS
 
+#![cfg_attr(feature = "clippy", allow(unstable_features))]
+#![cfg_attr(feature = "clippy", feature(plugin))]
+#![cfg_attr(feature = "clippy", plugin(clippy))]
+#![cfg_attr(feature = "clippy", deny(warnings))]
+
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::borrow::ToOwned;
