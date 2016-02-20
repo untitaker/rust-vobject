@@ -125,7 +125,7 @@ struct Parser<'s> {
 }
 
 impl<'s> Parser<'s> {
-    pub fn new<'a>(input: &'a str) -> Parser<'a> {
+    pub fn new(input: &'s str) -> Self {
         Parser {
             input: input,
             pos: 0,
@@ -282,16 +282,16 @@ impl<'s> Parser<'s> {
         })
     }
 
-    fn consume_property_name<'a>(&'a mut self) -> ParseResult<String> {
+    fn consume_property_name(&mut self) -> ParseResult<String> {
         let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
-        if rv.len() == 0 {
+        if rv.is_empty() {
             Err(ParseError::new("No property name found."))
         } else {
             Ok(rv)
         }
     }
 
-    fn consume_property_group<'a>(&'a mut self) -> ParseResult<String> {
+    fn consume_property_group(&mut self) -> ParseResult<String> {
         let start_pos = self.pos;
         let name = self.consume_property_name();
 
@@ -310,20 +310,20 @@ impl<'s> Parser<'s> {
         e
     }
 
-    fn consume_property_value<'a>(&'a mut self) -> ParseResult<String> {
+    fn consume_property_value(&mut self) -> ParseResult<String> {
         let rv = self.consume_while(|x| x != '\r' && x != '\n');
         try!(self.sloppy_terminate_line());
         Ok(rv)
     }
 
-    fn consume_param_name<'a>(&'a mut self) -> ParseResult<String> {
+    fn consume_param_name(&mut self) -> ParseResult<String> {
         match self.consume_property_name() {
             Ok(x) => Ok(x),
             Err(e) => Err(ParseError::new(format!("No param name found: {}", e))),
         }
     }
 
-    fn consume_param_value<'a>(&'a mut self) -> ParseResult<String> {
+    fn consume_param_value(&mut self) -> ParseResult<String> {
         let qsafe = |x| {
             x != '"' &&
             x != '\r' &&
@@ -342,7 +342,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_param<'a>(&'a mut self) -> ParseResult<(String, String)> {
+    fn consume_param(&mut self) -> ParseResult<(String, String)> {
         let name = try!(self.consume_param_name());
         let start_pos = self.pos;
         let value = if self.consume_only_char('=') {
@@ -424,14 +424,14 @@ pub fn write_component(c: &Component) -> String {
         buf.push_str(&c.name[..]);
         buf.push_str("\r\n");
 
-        for (prop_name, props) in c.props.iter() {
+        for (prop_name, props) in &c.props {
             for prop in props.iter() {
-                match prop.prop_group {
-                    Some(ref x) => { buf.push_str(&x[..]); buf.push('.'); },
-                    None => ()
+                if let Some(ref x) = prop.prop_group {
+                    buf.push_str(&x[..]);
+                    buf.push('.');
                 };
                 buf.push_str(&prop_name[..]);
-                for (param_key, param_value) in prop.params.iter() {
+                for (param_key, param_value) in &prop.params {
                     buf.push(';');
                     buf.push_str(&param_key[..]);
                     buf.push('=');
@@ -443,7 +443,7 @@ pub fn write_component(c: &Component) -> String {
             };
         };
 
-        for subcomponent in c.subcomponents.iter() {
+        for subcomponent in &c.subcomponents {
             inner(buf, subcomponent);
         };
 
