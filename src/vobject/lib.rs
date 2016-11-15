@@ -13,6 +13,7 @@ use std::fmt;
 use std::error::Error;
 
 
+#[derive(Clone)]
 pub struct Property {
     /// Key in component.
     pub name: String,
@@ -42,17 +43,6 @@ impl Property {
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
         unescape_chars(&self.raw_value[..])
-    }
-}
-
-impl Clone for Property {
-    fn clone(&self) -> Self {
-        Property {
-            name: self.name.clone(),
-            params: self.params.clone(),
-            raw_value: self.raw_value.clone(),
-            prop_group: self.prop_group.clone()
-        }
     }
 }
 
