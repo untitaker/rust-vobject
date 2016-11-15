@@ -114,7 +114,7 @@ impl Vcard {
     }
 
     /// Get the emails from the vcard object
-    pub fn emails<I: Iterator<Item = Component>>(&self) -> Emails<I> {
+    pub fn emails<I: Iterator<Item = Property>>(&self) -> Emails<I> {
         unimplemented!()
     }
 
@@ -331,5 +331,57 @@ impl Tel {
     pub fn new(types: Vec<Type>, num: String) -> Tel {
         Tel { ty: types, num: num }
     }
+}
+
+pub struct Emails<I: Iterator<Item = Property>>(I);
+
+impl<I: Iterator<Item = Property>> Emails<I> {
+
+    pub fn new(cs: Vec<Property>) -> Emails {
+        Emails(cs.into_iter())
+    }
+
+}
+
+impl<I: Iterator<Item = Property>> From<Vec<Property>> for Emails<I> {
+
+    fn from(v: Vec<Property>) -> Emails<I> {
+        Emails(v.into_iter())
+    }
+
+}
+
+impl<I: Iterator<Item = Property>> Iterator for Emails<I> {
+    type Item = Result<Email, VcardError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.next() {
+            Some(comp) => {
+                let ty = match comp.params.get("TYPE") {
+                    None => return Some(Err(VcardError::TypeMissing)),
+                    Some(t) => t,
+                };
+
+                let types : Vec<Type> = ty.split(",").map(ToOwned::to_owned).map(Type::from).collect();
+                Some(Ok(Email::new(types, comp.raw_value)))
+            },
+            None => None,
+        }
+    }
+
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Email {
+    ty: Vec<Type>,
+    num: String
+}
+
+impl Email {
+
+    pub fn new(types: Vec<Type>, num: String) -> Email {
+        Email { ty: types, num: num }
+    }
+
 }
 
