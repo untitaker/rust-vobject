@@ -143,3 +143,153 @@ impl DerefMut for Vcard {
     }
 
 }
+
+/// A type specifier as in `TEL;TYPE=PREF,CELL;...`
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Type(String);
+
+impl Deref for Type {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Type {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl From<String> for Type {
+    fn from(s: String) -> Type {
+        Type(s)
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Version(String);
+
+impl Deref for Version {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Version {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Uid(String);
+
+impl Deref for Uid {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Uid {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Rev(String);
+
+impl Deref for Rev {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Rev {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Name(String);
+
+impl Deref for Name {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Name {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Fullname(String);
+
+impl Deref for Fullname {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Fullname {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct ProdId(String);
+
+impl Deref for ProdId {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for ProdId {
+
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+pub struct Tels<I: Iterator<Item = Component>>(I);
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Tel {
+    ty: Vec<Type>,
+    num: String
+}
+
+impl Tel {
+
+    pub fn new(types: Vec<Type>, num: String) -> Tel {
+        Tel { ty: types, num: num }
+    }
+}
+
