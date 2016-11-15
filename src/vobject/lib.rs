@@ -6,7 +6,6 @@
 #![cfg_attr(feature = "clippy", deny(warnings))]
 
 use std::collections::HashMap;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::borrow::ToOwned;
 use std::str::FromStr;
 use std::fmt;
