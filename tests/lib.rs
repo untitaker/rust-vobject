@@ -24,10 +24,10 @@ fn test_vcard_basic() {
         REV:20140301T221110Z\n\
         END:VCARD\n\r\n\n").unwrap();
 
-    assert_eq!(item.single_prop("FN").unwrap().raw_value, s!("Erika Mustermann"));
-    assert_eq!(item.single_prop("N").unwrap().raw_value,  s!("Mustermann;Erika"));
+    assert_eq!(item.get_only("FN").unwrap().raw_value, s!("Erika Mustermann"));
+    assert_eq!(item.get_only("N").unwrap().raw_value,  s!("Mustermann;Erika"));
 
-    let mut tel_values = item.all_props("TEL").iter().map(|x| &x.raw_value[..]);
+    let mut tel_values = item.get_all("TEL").iter().map(|x| &x.raw_value[..]);
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 9999123"));
     assert_eq!(tel_values.next().unwrap(), s!("(0221) 1234567"));
     assert!(tel_values.next().is_none());
@@ -48,9 +48,9 @@ fn test_line_cont() {
         END:VCARD").unwrap();
 
     assert_eq!(item.name, s!("VCARD"));
-    assert_eq!(item.single_prop("TEL").unwrap().raw_value, s!("55554444"));
-    assert_eq!(item.single_prop("N").unwrap().raw_value, s!("Nikdo;Nikdo=vic"));
-    assert_eq!(item.single_prop("FN").unwrap().raw_value, s!("Alice;Alice=vic"));
+    assert_eq!(item.get_only("TEL").unwrap().raw_value, s!("55554444"));
+    assert_eq!(item.get_only("N").unwrap().raw_value, s!("Nikdo;Nikdo=vic"));
+    assert_eq!(item.get_only("FN").unwrap().raw_value, s!("Alice;Alice=vic"));
 }
 
 #[test]
@@ -74,13 +74,13 @@ fn test_icalendar_basic() {
             END:VCALENDAR\n").unwrap();
 
     assert_eq!(item.name, s!("VCALENDAR"));
-    assert!(item.single_prop("LOCATION").is_none());
-    assert!(item.single_prop("ORGANIZER").is_none());
+    assert!(item.get_only("LOCATION").is_none());
+    assert!(item.get_only("ORGANIZER").is_none());
 
     let event = &item.subcomponents[0];
     assert_eq!(event.name, s!("VEVENT"));
-    assert!(event.single_prop("ORGANIZER").is_some());
-    assert_eq!(event.single_prop("LOCATION").unwrap().raw_value, s!("Somewhere"));
+    assert!(event.get_only("ORGANIZER").is_some());
+    assert_eq!(event.get_only("LOCATION").unwrap().raw_value, s!("Somewhere"));
 }
 
 #[test]
@@ -95,7 +95,7 @@ fn test_icalendar_multline() {
         END:VEVENT\n").unwrap();
 
     assert_eq!(event.name, s!("VEVENT"));
-    assert_eq!(event.single_prop("SUMMARY").unwrap().raw_value,
+    assert_eq!(event.get_only("SUMMARY").unwrap().raw_value,
                s!("Important meeting"));
 }
 
@@ -122,7 +122,7 @@ fn test_escaping() {
             ORGANIZER;CN=\"Cott:n Eye Joe\":mailto:joe@joe.com\n\
             END:VCALENDAR\n").unwrap();
     assert_eq!(item.name, s!("VCALENDAR"));
-    assert_eq!(item.single_prop("ORGANIZER").unwrap().raw_value, s!("mailto:joe@joe.com"));
+    assert_eq!(item.get_only("ORGANIZER").unwrap().raw_value, s!("mailto:joe@joe.com"));
 }
 
 #[test]
@@ -132,6 +132,6 @@ fn test_property_groups() {
             foo.EMAIL;TYPE=INTERNET:foo@example.com\n\
             foo.X-ACTUAL-TYPE:CUSTOM\n\
             END:VCARD\n").unwrap();
-    assert_eq!(item.single_prop("EMAIL").unwrap().prop_group, Some("foo".to_owned()));
+    assert_eq!(item.get_only("EMAIL").unwrap().prop_group, Some("foo".to_owned()));
 
 }

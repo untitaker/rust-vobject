@@ -66,35 +66,44 @@ impl Component {
         }
     }
 
-    /// Retrieve one property (from many) by key. Returns `None` if nothing is found.
-    pub fn single_prop(&self, key: &str) -> Option<&Property> {
-        match self.props.get(key) {
-            Some(x) => {
-                match x.len() {
-                    1 => Some(&x[0]),
-                    _ => None
-                }
-            },
-            None => None
-        }
+    /// Append the given property, preserve other same-named properties.
+    pub fn push(&mut self, prop: Property) {
+        self.props.entry(prop.name.clone()).or_insert_with(Vec::new).push(prop);
     }
 
-    /// Retrieve a mutable vector of properties for this key. Creates one (and inserts it into the
-    /// component) if none exists.
-    pub fn all_props_mut<T: Into<String>>(&mut self, key: T) -> &mut Vec<Property> {
-        match self.props.entry(key.into()) {
-            Occupied(values) => values.into_mut(),
-            Vacant(values) => values.insert(vec![])
+    /// Set the given property, remove other same-named properties.
+    pub fn set(&mut self, prop: Property) {
+        self.props.insert(prop.name.clone(), vec![prop]);
+    }
+
+    /// Retrieve one property by key. Returns `None` if not exactly one property was found.
+    pub fn get_only<P: AsRef<str>>(&self, name: P) -> Option<&Property> {
+        match self.props.get(name.as_ref()) {
+            Some(x) if x.len() == 1 => Some(&x[0]),
+            _ => None
         }
     }
 
     /// Retrieve properties by key. Returns an empty slice if key doesn't exist.
-    pub fn all_props(&self, key: &str) -> &[Property] {
+    pub fn get_all<P: AsRef<str>>(&self, name: P) -> &[Property] {
         static EMPTY: &'static [Property] = &[];
-        match self.props.get(key) {
+        match self.props.get(name.as_ref()) {
             Some(values) => &values[..],
             None => EMPTY
         }
+    }
+
+    /// Remove a single property.
+    pub fn pop<P: AsRef<str>>(&mut self, name: P) -> Option<Property> {
+        match self.props.get_mut(name.as_ref()) {
+            Some(values) => values.pop(),
+            None => None
+        }
+    }
+
+    /// Remove all properties
+    pub fn remove<P: AsRef<str>>(&mut self, name: P) -> Option<Vec<Property>> {
+        self.props.remove(name.as_ref())
     }
 }
 
@@ -388,7 +397,7 @@ impl<'s> Parser<'s> {
 
                 break;
             } else {
-                component.all_props_mut(property.name.to_owned()).push(property);
+                component.push(property);
             }
         };
 
