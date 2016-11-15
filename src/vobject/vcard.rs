@@ -1,0 +1,1 @@
+//! vcard convenience functionality module

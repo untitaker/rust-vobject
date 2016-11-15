@@ -1,0 +1,1 @@
+//! icalendar convenience functionality module
