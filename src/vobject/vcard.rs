@@ -2,7 +2,11 @@
 
 use std::ops::{Deref, DerefMut};
 
-use vobject::Component;
+use std::error::Error;
+use std::fmt::{Display, Formatter, Error as FmtError};
+
+use Component;
+use Property;
 
 pub struct Vcard(Component);
 
@@ -278,7 +282,43 @@ impl DerefMut for ProdId {
     }
 }
 
-pub struct Tels<I: Iterator<Item = Component>>(I);
+pub struct Tels<I: Iterator<Item = Property>>(I);
+
+impl<I: Iterator<Item = Property>> Tels<I> {
+
+    fn new(ts: Vec<Property>) -> Tels<I> {
+        Tels(ts.into_iter())
+    }
+
+}
+
+impl<I: Iterator<Item = Property>> From<Vec<Property>> for Tels<I> {
+
+    fn from(v: Vec<Property>) -> Tels<I> {
+        Tels(v.into_iter())
+    }
+
+}
+
+impl<I: Iterator<Item = Property>> Iterator for Tels<I> {
+    type Item = Result<Tel, VcardError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.next() {
+            Some(comp) => {
+                let ty = match comp.params.get("TYPE") {
+                    None => return Some(Err(VcardError::TypeMissing)),
+                    Some(t) => t,
+                };
+
+                let types : Vec<Type> = ty.split(",").map(ToOwned::to_owned).map(Type::from).collect();
+                Some(Ok(Tel::new(types, comp.raw_value)))
+            },
+            None => None,
+        }
+    }
+
+}
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Tel {
