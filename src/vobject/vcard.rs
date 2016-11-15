@@ -109,8 +109,8 @@ impl Vcard {
     }
 
     /// Get the tel from the vcard object
-    pub fn tels<I: Iterator<Item = Component>>(&self) -> Tels<I> {
-        unimplemented!()
+    pub fn tels<I: Iterator<Item = Property>>(&self) -> Tels<I> {
+        Tels::from(self.0.all_props("TEL").to_owned())
     }
 
     /// Get the emails from the vcard object
