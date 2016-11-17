@@ -11,6 +11,11 @@ use std::str::FromStr;
 use std::fmt;
 use std::error::Error;
 
+#[cfg(feature = "icalendar")]
+pub mod icalendar;
+
+#[cfg(feature = "vcard")]
+pub mod vcard;
 
 #[derive(Clone)]
 pub struct Property {

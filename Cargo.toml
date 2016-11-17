@@ -16,5 +16,9 @@ license = "MIT"
 name = "vobject"
 path = "src/vobject/lib.rs"
 
+[features]
+icalendar = []
+vcard     = []
+
 [dependencies]
 clippy = {git = "https://github.com/Manishearth/rust-clippy", version = "*", optional = true}
