@@ -484,14 +484,13 @@ pub fn unescape_chars(s: &str) -> String {
 /// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
 /// '\n' or '\r' in it.
 pub fn fold_line(s: &str) -> String {
-    let mut rv = String::new();
-    for (i, c) in s.chars().enumerate() {
-        rv.push(c);
-        if i != 0 && i % 75 == 0 {
-            rv.push_str("\r\n ");
+    s.chars().enumerate().fold(String::new(), |mut acc, (chr, c)| {
+        acc.push(c);
+        if chr != 0 && chr % 75 == 0 {
+            acc.push_str("\r\n ");
         };
-    };
-    rv
+        acc
+    })
 }
 
 #[derive(PartialEq, Eq, Debug)]
