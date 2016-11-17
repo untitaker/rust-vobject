@@ -8,6 +8,25 @@ use std::fmt::{Display, Formatter, Error as FmtError};
 use Component;
 use Property;
 
+#[derive(Debug, Clone)]
+pub enum VcardError {
+    TypeMissing,
+}
+
+impl Display for VcardError {
+     fn fmt(&self, fmt: &mut Formatter) -> Result<(), FmtError> {
+         write!(fmt, "{}", self.description())
+     }
+}
+
+impl Error for VcardError {
+    fn description(&self) -> &str {
+        match *self {
+            VcardError::TypeMissing => "Type missing",
+        }
+    }
+}
+
 pub struct Vcard(Component);
 
 impl Vcard {
