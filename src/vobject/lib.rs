@@ -472,13 +472,8 @@ pub fn escape_chars(s: &str) -> String {
 pub fn unescape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\\n")
-        .replace("\r\n", "\n")
-        .replace("\\n", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
+    [ ("\\N", "\\n"), ("\r\n", "\n"), ("\\n", "\n"), ("\\,", ","), ("\\;", ";"), ("\\\\", "\\")]
+    .iter().fold(s.to_owned(), |acc, &(from, to)| acc.replace(from, to))
 }
 
 /// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
