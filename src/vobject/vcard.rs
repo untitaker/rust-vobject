@@ -128,7 +128,7 @@ impl Vcard {
     }
 
     /// Get the tel from the vcard object
-    pub fn tels<I: Iterator<Item = Property>>(&self) -> Tels<I> {
+    pub fn tels<I: Iterator<Item = Property>>(&self) -> Tels {
         Tels::from(self.0.all_props("TEL").to_owned())
     }
 
@@ -301,25 +301,27 @@ impl DerefMut for ProdId {
     }
 }
 
-pub struct Tels<I: Iterator<Item = Property>>(I);
+use std::vec::IntoIter as VecIntoIter;
 
-impl<I: Iterator<Item = Property>> Tels<I> {
+pub struct Tels(VecIntoIter<Property>);
 
-    fn new(ts: Vec<Property>) -> Tels<I> {
+impl Tels {
+
+    pub fn new(ts: Vec<Property>) -> Tels {
         Tels(ts.into_iter())
     }
 
 }
 
-impl<I: Iterator<Item = Property>> From<Vec<Property>> for Tels<I> {
+impl From<Vec<Property>> for Tels {
 
-    fn from(v: Vec<Property>) -> Tels<I> {
+    fn from(v: Vec<Property>) -> Tels {
         Tels(v.into_iter())
     }
 
 }
 
-impl<I: Iterator<Item = Property>> Iterator for Tels<I> {
+impl Iterator for Tels {
     type Item = Result<Tel, VcardError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -378,7 +380,7 @@ impl<I: Iterator<Item = Property>> Iterator for Emails<I> {
             Some(comp) => {
                 let ty = match comp.params.get("TYPE") {
                     None => return Some(Err(VcardError::TypeMissing)),
-                    Some(t) => t,
+                   Some(t) => t,
                 };
 
                 let types : Vec<Type> = ty.split(",").map(ToOwned::to_owned).map(Type::from).collect();
