@@ -133,7 +133,7 @@ impl Vcard {
     }
 
     /// Get the emails from the vcard object
-    pub fn emails<I: Iterator<Item = Property>>(&self) -> Emails<I> {
+    pub fn emails<I: Iterator<Item = Property>>(&self) -> Emails {
         unimplemented!()
     }
 
@@ -354,9 +354,9 @@ impl Tel {
     }
 }
 
-pub struct Emails<I: Iterator<Item = Property>>(I);
+pub struct Emails(VecIntoIter<Property>);
 
-impl<I: Iterator<Item = Property>> Emails<I> {
+impl Emails {
 
     pub fn new(cs: Vec<Property>) -> Emails {
         Emails(cs.into_iter())
@@ -364,15 +364,15 @@ impl<I: Iterator<Item = Property>> Emails<I> {
 
 }
 
-impl<I: Iterator<Item = Property>> From<Vec<Property>> for Emails<I> {
+impl From<Vec<Property>> for Emails {
 
-    fn from(v: Vec<Property>) -> Emails<I> {
+    fn from(v: Vec<Property>) -> Emails {
         Emails(v.into_iter())
     }
 
 }
 
-impl<I: Iterator<Item = Property>> Iterator for Emails<I> {
+impl Iterator for Emails {
     type Item = Result<Email, VcardError>;
 
     fn next(&mut self) -> Option<Self::Item> {
