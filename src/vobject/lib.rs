@@ -459,13 +459,8 @@ pub fn write_component(c: &Component) -> String {
 pub fn escape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\n")
-        .replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\r\n", "\\n")
-        .replace("\n", "\\n")
+    [("\\N", "\n"), ("\\", "\\\\"), (";", "\\;"), (",", "\\,"), ("\r\n", "\\n"), ("\n", "\\n")]
+    .iter().fold(s.to_owned(), |acc, &(from, to)| acc.replace(from, to))
 }
 
 /// Unescape text from a VObject property value.
