@@ -455,20 +455,32 @@ pub fn write_component(c: &Component) -> String {
     buf
 }
 
+/// Replace multiple strings in a target string.
+///
+/// Parameters:
+/// * target: Target String object to apply replace() operations to
+/// * repl: Replacement tuples, first element tuple beeing the search pattern, second element
+///   beeing the replacement str
+///
+#[inline]
+fn multi_replace(target: String, repl: &[(&str, &str)]) -> String {
+    repl.iter().fold(target, |acc, &(from, to)| acc.replace(from, to))
+}
+
 /// Escape text for a VObject property value.
 pub fn escape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    [("\\N", "\n"), ("\\", "\\\\"), (";", "\\;"), (",", "\\,"), ("\r\n", "\\n"), ("\n", "\\n")]
-    .iter().fold(s.to_owned(), |acc, &(from, to)| acc.replace(from, to))
+    let r = [("\\N", "\n"), ("\\", "\\\\"), (";", "\\;"), (",", "\\,"), ("\r\n", "\\n"), ("\n", "\\n")];
+    multi_replace(String::from(s), r)
 }
 
 /// Unescape text from a VObject property value.
 pub fn unescape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    [ ("\\N", "\\n"), ("\r\n", "\n"), ("\\n", "\n"), ("\\,", ","), ("\\;", ";"), ("\\\\", "\\")]
-    .iter().fold(s.to_owned(), |acc, &(from, to)| acc.replace(from, to))
+    let r = [ ("\\N", "\\n"), ("\r\n", "\n"), ("\\n", "\n"), ("\\,", ","), ("\\;", ";"), ("\\\\", "\\")];
+    multi_replace(String::from(s), r)
 }
 
 /// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
