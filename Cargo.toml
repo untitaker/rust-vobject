@@ -8,13 +8,10 @@ repository = "https://github.com/untitaker/rust-vobject"
 readme = "README.md"
 keywords = ["vobject", "icalendar", "calendar", "contacts"]
 
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 
 [lib]
 name = "vobject"
 path = "src/vobject/lib.rs"
-
-[dependencies]
-clippy = {git = "https://github.com/Manishearth/rust-clippy", version = "*", optional = true}
