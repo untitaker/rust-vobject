@@ -478,17 +478,30 @@ pub fn unescape_chars(s: &str) -> String {
         .replace("\\\\", "\\")
 }
 
-/// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
-/// '\n' or '\r' in it.
-pub fn fold_line(s: &str) -> String {
-    let mut rv = String::new();
-    for (i, c) in s.chars().enumerate() {
-        rv.push(c);
-        if i != 0 && i % 75 == 0 {
-            rv.push_str("\r\n ");
-        };
-    };
-    rv
+/// Fold contentline to 75 bytes or less. This function assumes the input
+/// to be unfolded, which means no '\n' or '\r' in it.
+pub fn fold_line(line: &str) -> String {
+    let limit = 75;
+    let len = line.len();
+    let mut bytes_remaining = len;
+    let mut ret = String::with_capacity(len + (len / limit * 3));
+
+    let mut pos = 0;
+    let mut next_pos = limit;
+    while bytes_remaining > limit {
+        while line.is_char_boundary(next_pos) == false {
+            next_pos -= 1;
+        }
+        ret.push_str(&line[pos..next_pos]);
+        ret.push_str("\r\n ");
+
+        bytes_remaining -= next_pos - pos;
+        pos = next_pos;
+        next_pos += limit;
+    }
+
+    ret.push_str(&line[len - bytes_remaining..]);
+    ret
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -528,7 +541,7 @@ impl ParseError {
 
 #[cfg(test)]
 mod tests {
-    use super::{Parser, ParseError};
+    use super::{Parser, ParseError, fold_line};
 
     #[test]
     fn test_unfold1() {
@@ -543,6 +556,16 @@ mod tests {
         assert_eq!(p.consume_char(), Some('c'));
         assert_eq!(p.consume_char(), Some('\n'));
         assert_eq!(p.consume_char(), Some('x'));
+    }
+
+    #[test]
+    fn test_fold() {
+        let line = "This should be multiple lines and fold on char boundaries. 毎害止\
+                   加食下組多地将写館来局必第。東証細再記得玲祉込吉宣会法授";
+        let expected = "This should be multiple lines and fold on char boundaries. 毎害止\
+                       加食\r\n 下組多地将写館来局必第。東証細再記得玲祉込吉宣会法\r\n 授";
+        assert_eq!(expected, fold_line(line));
+        assert_eq!("ab", fold_line("ab"));
     }
 
     #[test]
