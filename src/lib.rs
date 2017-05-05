@@ -1,10 +1,5 @@
 // DOCS
 
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy))]
-#![cfg_attr(feature = "clippy", deny(warnings))]
-
 use std::collections::HashMap;
 use std::borrow::ToOwned;
 use std::str::FromStr;
@@ -12,7 +7,7 @@ use std::fmt;
 use std::error::Error;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Property {
     /// Key in component.
     pub name: String,
@@ -30,21 +25,25 @@ pub struct Property {
 
 impl Property {
     /// Create property from unescaped string.
-    pub fn new(name: &str, value: &str) -> Property {
+    pub fn new<N, V>(name: N, value: V) -> Property
+        where N: Into<String>,
+              V: AsRef<str>
+    {
         Property {
-            name: name.to_owned(),
+            name: name.into(),
             params: HashMap::new(),
-            raw_value: escape_chars(value),
+            raw_value: escape_chars(value.as_ref()),
             prop_group: None
         }
     }
 
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
-        unescape_chars(&self.raw_value[..])
+        unescape_chars(&self.raw_value)
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Component {
     /// The name of the component, such as `VCARD` or `VEVENT`.
     pub name: String,
@@ -57,7 +56,7 @@ pub struct Component {
 }
 
 impl Component {
-    pub fn new<T: Into<String>>(name: T) -> Component {
+    pub fn new<N: Into<String>>(name: N) -> Component {
         Component {
             name: name.into(),
             props: HashMap::new(),
@@ -109,7 +108,7 @@ impl Component {
 impl FromStr for Component {
     type Err = ParseError;
 
-    /// Same as `vobject::parse_component`, but without the error messages.
+    /// Same as `vobject::parse_component`
     fn from_str(s: &str) -> ParseResult<Component> {
         parse_component(s)
     }
@@ -150,12 +149,12 @@ impl<'s> Parser<'s> {
             Some('\r') => self.peek_at(at + 1),
             Some('\n') => {
                 match self.peek_at(at + 1) {
-                    Some((' ', offset)) | Some(('\t', offset)) =>
-                        self.peek_at(offset),
-                    _ => Some(('\n', at + 1))
+                    Some((' ', offset)) |
+                    Some(('\t', offset)) => self.peek_at(offset),
+                    _ => Some(('\n', at + 1)),
                 }
-            },
-            Some(x) => { Some((x, at + x.len_utf8())) }
+            }
+            Some(x) => Some((x, at + x.len_utf8()))
         }
     }
 
@@ -192,13 +191,12 @@ impl<'s> Parser<'s> {
     /// otherwise return `false`.
     fn consume_only_char(&mut self, c: char) -> bool {
         match self.peek() {
-            Some((d, offset)) if d == c => {self.pos += offset; true},
+            Some((d, offset)) if d == c => { self.pos += offset; true },
             _ => false
         }
     }
 
     fn consume_eol(&mut self) -> ParseResult<()> {
-        
         let start_pos = self.pos;
 
         let consumed = match self.consume_char() {
@@ -209,7 +207,7 @@ impl<'s> Parser<'s> {
             },
             _ => false,
         };
-            
+
         if consumed {
             Ok(())
         } else {
@@ -221,7 +219,7 @@ impl<'s> Parser<'s> {
     fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
         if !self.eof() {
             try!(self.consume_eol());
-            while let Ok(_) = self.consume_eol() {};
+            while let Ok(_) = self.consume_eol() {}
         };
 
         Ok(())
@@ -362,20 +360,20 @@ impl<'s> Parser<'s> {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
                 Err(_) => break,
             }
-        };
+        }
         rv
     }
 
     fn consume_component(&mut self) -> ParseResult<Component> {
-        let begin_pos = self.pos;
+        let start_pos = self.pos;
         let mut property = try!(self.consume_property());
         if property.name != "BEGIN" {
-            self.pos = begin_pos;
+            self.pos = start_pos;
             return Err(ParseError::new("Expected BEGIN tag."));
         };
 
-        let c_name = property.raw_value;
-        let mut component = Component::new(&c_name[..]);
+        // Create a component with the name of the BEGIN tag's value
+        let mut component = Component::new(property.raw_value);
 
         loop {
             let previous_pos = self.pos;
@@ -384,18 +382,18 @@ impl<'s> Parser<'s> {
                 self.pos = previous_pos;
                 component.subcomponents.push(try!(self.consume_component()));
             } else if property.name == "END" {
-                if property.raw_value != c_name {
+                if property.raw_value != component.name {
                     return Err(ParseError::new(format!(
                         "Mismatched tags: BEGIN:{} vs END:{}",
-                        c_name, property.raw_value
-                    )));
-                };
+                        component.name, property.raw_value
+                    )))
+                }
 
                 break;
             } else {
                 component.push(property);
             }
-        };
+        }
 
         Ok(component)
     }
@@ -412,38 +410,38 @@ pub fn parse_component(s: &str) -> ParseResult<Component> {
     }
 }
 
-/// Write a component. The error value is a human-readable message.
+/// Write a component to a String.
 pub fn write_component(c: &Component) -> String {
     fn inner(buf: &mut String, c: &Component) {
         buf.push_str("BEGIN:");
-        buf.push_str(&c.name[..]);
+        buf.push_str(&c.name);
         buf.push_str("\r\n");
 
         for (prop_name, props) in &c.props {
             for prop in props.iter() {
                 if let Some(ref x) = prop.prop_group {
-                    buf.push_str(&x[..]);
+                    buf.push_str(&x);
                     buf.push('.');
                 };
-                buf.push_str(&prop_name[..]);
+                buf.push_str(&prop_name);
                 for (param_key, param_value) in &prop.params {
                     buf.push(';');
-                    buf.push_str(&param_key[..]);
+                    buf.push_str(&param_key);
                     buf.push('=');
-                    buf.push_str(&param_value[..]);
-                };
+                    buf.push_str(&param_value);
+                }
                 buf.push(':');
-                buf.push_str(&fold_line(&prop.raw_value[..])[..]);
+                buf.push_str(&fold_line(&prop.raw_value));
                 buf.push_str("\r\n");
-            };
-        };
+            }
+        }
 
         for subcomponent in &c.subcomponents {
             inner(buf, subcomponent);
-        };
+        }
 
         buf.push_str("END:");
-        buf.push_str(&c.name[..]);
+        buf.push_str(&c.name);
         buf.push_str("\r\n");
     }
 
@@ -620,4 +618,3 @@ mod tests {
         }
     }
 }
-
