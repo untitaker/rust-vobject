@@ -11,7 +11,3 @@ keywords = ["vobject", "icalendar", "calendar", "contacts"]
 version = "0.2.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
-
-[lib]
-name = "vobject"
-path = "src/vobject/lib.rs"
