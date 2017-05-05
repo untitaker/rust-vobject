@@ -382,9 +382,7 @@ impl<'s> Parser<'s> {
             property = try!(self.consume_property());
             if property.name == "BEGIN" {
                 self.pos = previous_pos;
-                while let Ok(subcomponent) = self.consume_component() {
-                    component.subcomponents.push(subcomponent);
-                };
+                component.subcomponents.push(try!(self.consume_component()));
             } else if property.name == "END" {
                 if property.raw_value != c_name {
                     self.pos = begin_pos;
@@ -531,7 +529,7 @@ impl ParseError {
 
 #[cfg(test)]
 mod tests {
-    use super::Parser;
+    use super::{Parser, ParseError};
 
     #[test]
     fn test_unfold1() {
@@ -583,5 +581,21 @@ mod tests {
         assert_eq!(p.pos, 4);
     }
 
+    #[test]
+    fn mismatched_begin_end_tags_returns_error() {
+        // Test for infinite loops as well
+        use std::sync::mpsc::{channel, RecvTimeoutError};
+        use std::time::Duration;
+        let mut p = Parser {input: "BEGIN:a\nBEGIN:b\nEND:a", pos: 0};
+
+        let (tx, rx) = channel();
+        ::std::thread::spawn(move|| { tx.send(p.consume_component()) });
+
+        match rx.recv_timeout(Duration::from_millis(50)) {
+            Err(RecvTimeoutError::Timeout) => assert!(false),
+            Ok(Err(ParseError {desc: _} )) => assert!(true),
+            _ => assert!(false),
+        }
+    }
 }
 
