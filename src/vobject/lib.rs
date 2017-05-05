@@ -453,43 +453,44 @@ pub fn write_component(c: &Component) -> String {
     buf
 }
 
+/// Replace multiple strings in a target string.
+///
+/// Parameters:
+/// * target: Target String object to apply replace() operations to
+/// * repl: Replacement tuples, first element tuple beeing the search pattern, second element
+///   beeing the replacement str
+///
+#[inline]
+fn multi_replace(target: String, repl: &[(&str, &str)]) -> String {
+    repl.iter().fold(target, |acc, &(from, to)| acc.replace(from, to))
+}
+
 /// Escape text for a VObject property value.
 pub fn escape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\n")
-        .replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace("\r\n", "\\n")
-        .replace("\n", "\\n")
+    let r = [("\\N", "\n"), ("\\", "\\\\"), (";", "\\;"), (",", "\\,"), ("\r\n", "\\n"), ("\n", "\\n")];
+    multi_replace(String::from(s), r)
 }
 
 /// Unescape text from a VObject property value.
 pub fn unescape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\\n")
-        .replace("\r\n", "\n")
-        .replace("\\n", "\n")
-        .replace("\\,", ",")
-        .replace("\\;", ";")
-        .replace("\\\\", "\\")
+    let r = [ ("\\N", "\\n"), ("\r\n", "\n"), ("\\n", "\n"), ("\\,", ","), ("\\;", ";"), ("\\\\", "\\")];
+    multi_replace(String::from(s), r)
 }
 
 /// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
 /// '\n' or '\r' in it.
 pub fn fold_line(s: &str) -> String {
-    let mut rv = String::new();
-    for (i, c) in s.chars().enumerate() {
-        rv.push(c);
-        if i != 0 && i % 75 == 0 {
-            rv.push_str("\r\n ");
+    s.chars().enumerate().fold(String::new(), |mut acc, (chr, c)| {
+        acc.push(c);
+        if chr != 0 && chr % 75 == 0 {
+            acc.push_str("\r\n ");
         };
-    };
-    rv
+        acc
+    })
 }
 
 #[derive(PartialEq, Eq, Debug)]
