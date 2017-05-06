@@ -383,6 +383,7 @@ impl<'s> Parser<'s> {
                 component.subcomponents.push(try!(self.consume_component()));
             } else if property.name == "END" {
                 if property.raw_value != component.name {
+                    self.pos = start_pos;
                     return Err(ParseError::new(format!(
                         "Mismatched tags: BEGIN:{} vs END:{}",
                         component.name, property.raw_value
