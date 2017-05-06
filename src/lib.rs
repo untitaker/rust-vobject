@@ -1,10 +1,5 @@
 // DOCS
 
-#![cfg_attr(feature = "clippy", allow(unstable_features))]
-#![cfg_attr(feature = "clippy", feature(plugin))]
-#![cfg_attr(feature = "clippy", plugin(clippy))]
-#![cfg_attr(feature = "clippy", deny(warnings))]
-
 use std::collections::HashMap;
 use std::borrow::ToOwned;
 use std::str::FromStr;
@@ -12,7 +7,7 @@ use std::fmt;
 use std::error::Error;
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Property {
     /// Key in component.
     pub name: String,
@@ -30,21 +25,25 @@ pub struct Property {
 
 impl Property {
     /// Create property from unescaped string.
-    pub fn new(name: &str, value: &str) -> Property {
+    pub fn new<N, V>(name: N, value: V) -> Property
+        where N: Into<String>,
+              V: AsRef<str>
+    {
         Property {
-            name: name.to_owned(),
+            name: name.into(),
             params: HashMap::new(),
-            raw_value: escape_chars(value),
+            raw_value: escape_chars(value.as_ref()),
             prop_group: None
         }
     }
 
     /// Get value as unescaped string.
     pub fn value_as_string(&self) -> String {
-        unescape_chars(&self.raw_value[..])
+        unescape_chars(&self.raw_value)
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Component {
     /// The name of the component, such as `VCARD` or `VEVENT`.
     pub name: String,
@@ -57,7 +56,7 @@ pub struct Component {
 }
 
 impl Component {
-    pub fn new<T: Into<String>>(name: T) -> Component {
+    pub fn new<N: Into<String>>(name: N) -> Component {
         Component {
             name: name.into(),
             props: HashMap::new(),
@@ -109,7 +108,7 @@ impl Component {
 impl FromStr for Component {
     type Err = ParseError;
 
-    /// Same as `vobject::parse_component`, but without the error messages.
+    /// Same as `vobject::parse_component`
     fn from_str(s: &str) -> ParseResult<Component> {
         parse_component(s)
     }
@@ -150,12 +149,12 @@ impl<'s> Parser<'s> {
             Some('\r') => self.peek_at(at + 1),
             Some('\n') => {
                 match self.peek_at(at + 1) {
-                    Some((' ', offset)) | Some(('\t', offset)) =>
-                        self.peek_at(offset),
-                    _ => Some(('\n', at + 1))
+                    Some((' ', offset)) |
+                    Some(('\t', offset)) => self.peek_at(offset),
+                    _ => Some(('\n', at + 1)),
                 }
-            },
-            Some(x) => { Some((x, at + x.len_utf8())) }
+            }
+            Some(x) => Some((x, at + x.len_utf8()))
         }
     }
 
@@ -192,13 +191,12 @@ impl<'s> Parser<'s> {
     /// otherwise return `false`.
     fn consume_only_char(&mut self, c: char) -> bool {
         match self.peek() {
-            Some((d, offset)) if d == c => {self.pos += offset; true},
+            Some((d, offset)) if d == c => { self.pos += offset; true },
             _ => false
         }
     }
 
     fn consume_eol(&mut self) -> ParseResult<()> {
-        
         let start_pos = self.pos;
 
         let consumed = match self.consume_char() {
@@ -209,7 +207,7 @@ impl<'s> Parser<'s> {
             },
             _ => false,
         };
-            
+
         if consumed {
             Ok(())
         } else {
@@ -221,7 +219,7 @@ impl<'s> Parser<'s> {
     fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
         if !self.eof() {
             try!(self.consume_eol());
-            while let Ok(_) = self.consume_eol() {};
+            while let Ok(_) = self.consume_eol() {}
         };
 
         Ok(())
@@ -362,20 +360,20 @@ impl<'s> Parser<'s> {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
                 Err(_) => break,
             }
-        };
+        }
         rv
     }
 
     fn consume_component(&mut self) -> ParseResult<Component> {
-        let begin_pos = self.pos;
+        let start_pos = self.pos;
         let mut property = try!(self.consume_property());
         if property.name != "BEGIN" {
-            self.pos = begin_pos;
+            self.pos = start_pos;
             return Err(ParseError::new("Expected BEGIN tag."));
         };
 
-        let c_name = property.raw_value;
-        let mut component = Component::new(&c_name[..]);
+        // Create a component with the name of the BEGIN tag's value
+        let mut component = Component::new(property.raw_value);
 
         loop {
             let previous_pos = self.pos;
@@ -384,19 +382,18 @@ impl<'s> Parser<'s> {
                 self.pos = previous_pos;
                 component.subcomponents.push(try!(self.consume_component()));
             } else if property.name == "END" {
-                if property.raw_value != c_name {
-                    self.pos = begin_pos;
+                if property.raw_value != component.name {
                     return Err(ParseError::new(format!(
                         "Mismatched tags: BEGIN:{} vs END:{}",
-                        c_name, property.raw_value
-                    )));
-                };
+                        component.name, property.raw_value
+                    )))
+                }
 
                 break;
             } else {
                 component.push(property);
             }
-        };
+        }
 
         Ok(component)
     }
@@ -413,38 +410,38 @@ pub fn parse_component(s: &str) -> ParseResult<Component> {
     }
 }
 
-/// Write a component. The error value is a human-readable message.
+/// Write a component to a String.
 pub fn write_component(c: &Component) -> String {
     fn inner(buf: &mut String, c: &Component) {
         buf.push_str("BEGIN:");
-        buf.push_str(&c.name[..]);
+        buf.push_str(&c.name);
         buf.push_str("\r\n");
 
         for (prop_name, props) in &c.props {
             for prop in props.iter() {
                 if let Some(ref x) = prop.prop_group {
-                    buf.push_str(&x[..]);
+                    buf.push_str(&x);
                     buf.push('.');
                 };
-                buf.push_str(&prop_name[..]);
+                buf.push_str(&prop_name);
                 for (param_key, param_value) in &prop.params {
                     buf.push(';');
-                    buf.push_str(&param_key[..]);
+                    buf.push_str(&param_key);
                     buf.push('=');
-                    buf.push_str(&param_value[..]);
-                };
+                    buf.push_str(&param_value);
+                }
                 buf.push(':');
-                buf.push_str(&fold_line(&prop.raw_value[..])[..]);
+                buf.push_str(&fold_line(&prop.raw_value));
                 buf.push_str("\r\n");
-            };
-        };
+            }
+        }
 
         for subcomponent in &c.subcomponents {
             inner(buf, subcomponent);
-        };
+        }
 
         buf.push_str("END:");
-        buf.push_str(&c.name[..]);
+        buf.push_str(&c.name);
         buf.push_str("\r\n");
     }
 
@@ -479,17 +476,30 @@ pub fn unescape_chars(s: &str) -> String {
         .replace("\\\\", "\\")
 }
 
-/// Fold contentline to 75 chars. This function assumes the input to be unfolded, which means no
-/// '\n' or '\r' in it.
-pub fn fold_line(s: &str) -> String {
-    let mut rv = String::new();
-    for (i, c) in s.chars().enumerate() {
-        rv.push(c);
-        if i != 0 && i % 75 == 0 {
-            rv.push_str("\r\n ");
-        };
-    };
-    rv
+/// Fold contentline to 75 bytes or less. This function assumes the input
+/// to be unfolded, which means no '\n' or '\r' in it.
+pub fn fold_line(line: &str) -> String {
+    let limit = 75;
+    let len = line.len();
+    let mut bytes_remaining = len;
+    let mut ret = String::with_capacity(len + (len / limit * 3));
+
+    let mut pos = 0;
+    let mut next_pos = limit;
+    while bytes_remaining > limit {
+        while line.is_char_boundary(next_pos) == false {
+            next_pos -= 1;
+        }
+        ret.push_str(&line[pos..next_pos]);
+        ret.push_str("\r\n ");
+
+        bytes_remaining -= next_pos - pos;
+        pos = next_pos;
+        next_pos += limit;
+    }
+
+    ret.push_str(&line[len - bytes_remaining..]);
+    ret
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -529,7 +539,7 @@ impl ParseError {
 
 #[cfg(test)]
 mod tests {
-    use super::{Parser, ParseError};
+    use super::{Parser, ParseError, fold_line};
 
     #[test]
     fn test_unfold1() {
@@ -544,6 +554,16 @@ mod tests {
         assert_eq!(p.consume_char(), Some('c'));
         assert_eq!(p.consume_char(), Some('\n'));
         assert_eq!(p.consume_char(), Some('x'));
+    }
+
+    #[test]
+    fn test_fold() {
+        let line = "This should be multiple lines and fold on char boundaries. 毎害止\
+                   加食下組多地将写館来局必第。東証細再記得玲祉込吉宣会法授";
+        let expected = "This should be multiple lines and fold on char boundaries. 毎害止\
+                       加食\r\n 下組多地将写館来局必第。東証細再記得玲祉込吉宣会法\r\n 授";
+        assert_eq!(expected, fold_line(line));
+        assert_eq!("ab", fold_line("ab"));
     }
 
     #[test]
@@ -598,4 +618,3 @@ mod tests {
         }
     }
 }
-
