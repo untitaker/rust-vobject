@@ -7,6 +7,7 @@ pub mod component;
 pub mod error;
 mod parser;
 pub mod property;
+pub mod vcard;
 
 pub use component::Component;
 pub use component::parse_component;

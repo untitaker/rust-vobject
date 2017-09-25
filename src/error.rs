@@ -10,6 +10,12 @@ error_chain! {
             description("Parser error")
             display("{}", desc)
         }
+
+        NotAVCard(content: String) {
+            description("Input is not a valid VCard")
+            display("Not a VCard: '{}'", content)
+        }
+
     }
 
 
