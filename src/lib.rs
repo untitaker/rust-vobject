@@ -3,9 +3,13 @@
 use std::collections::BTreeMap;
 use std::borrow::ToOwned;
 use std::str::FromStr;
-use std::fmt;
-use std::error::Error;
 
+#[macro_use]
+extern crate error_chain;
+
+pub mod error;
+
+use error::*;
 
 #[derive(Clone, Debug)]
 pub struct Property {
@@ -106,10 +110,10 @@ impl Component {
 }
 
 impl FromStr for Component {
-    type Err = ParseError;
+    type Err = VObjectError;
 
     /// Same as `vobject::parse_component`
-    fn from_str(s: &str) -> ParseResult<Component> {
+    fn from_str(s: &str) -> Result<Component> {
         parse_component(s)
     }
 }
@@ -167,14 +171,18 @@ impl<'s> Parser<'s> {
         self.pos >= self.input.len()
     }
 
-    fn assert_char(&self, c: char) -> ParseResult<()> {
+    fn assert_char(&self, c: char) -> Result<()> {
         let real_c = match self.peek() {
             Some((x, _)) => x,
-            None => return Err(ParseError::new(format!("Expected {}, found EOL", c))),
+            None => {
+                let kind = VObjectErrorKind::ParserError(format!("Expected {}, found EOL", c));
+                return Err(VObjectError::from_kind(kind))
+           }
         };
 
         if real_c != c {
-            return Err(ParseError::new(format!("Expected {}, found {}", c, real_c)))
+            let kind = VObjectErrorKind::ParserError(format!("Expected {}, found {}", c, real_c));
+            return Err(VObjectError::from_kind(kind))
         };
 
         Ok(())
@@ -196,7 +204,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_eol(&mut self) -> ParseResult<()> {
+    fn consume_eol(&mut self) -> Result<()> {
         let start_pos = self.pos;
 
         let consumed = match self.consume_char() {
@@ -212,11 +220,12 @@ impl<'s> Parser<'s> {
             Ok(())
         } else {
             self.pos = start_pos;
-            Err(ParseError::new("Expected EOL."))
+            let kind = VObjectErrorKind::ParserError("Expected EOL.".to_owned());
+            Err(VObjectError::from_kind(kind))
         }
     }
 
-    fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
+    fn sloppy_terminate_line(&mut self) -> Result<()> {
         if !self.eof() {
             try!(self.consume_eol());
             while let Ok(_) = self.consume_eol() {}
@@ -260,7 +269,7 @@ impl<'s> Parser<'s> {
         res
     }
 
-    pub fn consume_property(&mut self) -> ParseResult<Property> {
+    pub fn consume_property(&mut self) -> Result<Property> {
         let group = self.consume_property_group().ok();
         let name = try!(self.consume_property_name());
         let params = self.consume_params();
@@ -278,16 +287,17 @@ impl<'s> Parser<'s> {
         })
     }
 
-    fn consume_property_name(&mut self) -> ParseResult<String> {
+    fn consume_property_name(&mut self) -> Result<String> {
         let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
         if rv.is_empty() {
-            Err(ParseError::new("No property name found."))
+            let kind = VObjectErrorKind::ParserError("No property name found.".to_owned());
+            Err(VObjectError::from_kind(kind))
         } else {
             Ok(rv)
         }
     }
 
-    fn consume_property_group(&mut self) -> ParseResult<String> {
+    fn consume_property_group(&mut self) -> Result<String> {
         let start_pos = self.pos;
         let name = self.consume_property_name();
 
@@ -306,20 +316,23 @@ impl<'s> Parser<'s> {
         e
     }
 
-    fn consume_property_value(&mut self) -> ParseResult<String> {
+    fn consume_property_value(&mut self) -> Result<String> {
         let rv = self.consume_while(|x| x != '\r' && x != '\n');
         try!(self.sloppy_terminate_line());
         Ok(rv)
     }
 
-    fn consume_param_name(&mut self) -> ParseResult<String> {
+    fn consume_param_name(&mut self) -> Result<String> {
         match self.consume_property_name() {
             Ok(x) => Ok(x),
-            Err(e) => Err(ParseError::new(format!("No param name found: {}", e))),
+            Err(e) => {
+                let kind = VObjectErrorKind::ParserError(format!("No param name found: {}", e));
+                Err(VObjectError::from_kind(kind))
+            }
         }
     }
 
-    fn consume_param_value(&mut self) -> ParseResult<String> {
+    fn consume_param_value(&mut self) -> Result<String> {
         let qsafe = |x| {
             x != '"' &&
             x != '\r' &&
@@ -338,7 +351,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_param(&mut self) -> ParseResult<(String, String)> {
+    fn consume_param(&mut self) -> Result<(String, String)> {
         let name = try!(self.consume_param_name());
         let start_pos = self.pos;
         let value = if self.consume_only_char('=') {
@@ -364,12 +377,13 @@ impl<'s> Parser<'s> {
         rv
     }
 
-    fn consume_component(&mut self) -> ParseResult<Component> {
+    fn consume_component(&mut self) -> Result<Component> {
         let start_pos = self.pos;
         let mut property = try!(self.consume_property());
         if property.name != "BEGIN" {
             self.pos = start_pos;
-            return Err(ParseError::new("Expected BEGIN tag."));
+            let kind = VObjectErrorKind::ParserError("Expected BEGIN tag.".to_owned());
+            return Err(VObjectError::from_kind(kind));
         };
 
         // Create a component with the name of the BEGIN tag's value
@@ -384,10 +398,11 @@ impl<'s> Parser<'s> {
             } else if property.name == "END" {
                 if property.raw_value != component.name {
                     self.pos = start_pos;
-                    return Err(ParseError::new(format!(
-                        "Mismatched tags: BEGIN:{} vs END:{}",
-                        component.name, property.raw_value
-                    )))
+                    let s = format!("Mismatched tags: BEGIN:{} vs END:{}",
+                                    component.name,
+                                    property.raw_value);
+                    let kind = VObjectErrorKind::ParserError(s);
+                    return Err(VObjectError::from_kind(kind));
                 }
 
                 break;
@@ -401,11 +416,13 @@ impl<'s> Parser<'s> {
 }
 
 /// Parse exactly one component. Trailing data generates errors.
-pub fn parse_component(s: &str) -> ParseResult<Component> {
+pub fn parse_component(s: &str) -> Result<Component> {
     let mut parser = Parser::new(s);
     let rv = try!(parser.consume_component());
     if !parser.eof() {
-        Err(ParseError::new(format!("Trailing data: `{}`", &parser.input[parser.pos..])))
+        let s = format!("Trailing data: `{}`", &parser.input[parser.pos..]);
+        let kind = VObjectErrorKind::ParserError(s);
+        Err(VObjectError::from_kind(kind))
     } else {
         Ok(rv)
     }
@@ -503,44 +520,11 @@ pub fn fold_line(line: &str) -> String {
     ret
 }
 
-#[derive(PartialEq, Eq, Debug)]
-pub struct ParseError {
-    desc: String
-}
-
-pub type ParseResult<T> = Result<T, ParseError>;
-
-impl Error for ParseError {
-    fn description(&self) -> &str {
-        &self.desc[..]
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        None
-    }
-}
-
-impl fmt::Display for ParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.description().fmt(f)
-    }
-}
-
-impl ParseError {
-    pub fn new<T: Into<String>>(desc: T) -> Self {
-        ParseError {
-            desc: desc.into(),
-        }
-    }
-
-    pub fn into_string(self) -> String {
-        self.desc
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Parser, ParseError, fold_line};
+    use error::*;
+    use super::fold_line;
+    use super::Parser;
 
     #[test]
     fn test_unfold1() {
@@ -614,7 +598,7 @@ mod tests {
 
         match rx.recv_timeout(Duration::from_millis(50)) {
             Err(RecvTimeoutError::Timeout) => assert!(false),
-            Ok(Err(ParseError {desc: _} )) => assert!(true),
+            Ok(Err(VObjectError(VObjectErrorKind::ParserError{..}, _ ))) => assert!(true),
             _ => assert!(false),
         }
     }
