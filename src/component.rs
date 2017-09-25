@@ -155,3 +155,19 @@ pub fn fold_line(line: &str) -> String {
     ret
 }
 
+
+#[cfg(test)]
+mod tests {
+    use component::fold_line;
+
+    #[test]
+    fn test_fold() {
+        let line = "This should be multiple lines and fold on char boundaries. 毎害止\
+                   加食下組多地将写館来局必第。東証細再記得玲祉込吉宣会法授";
+        let expected = "This should be multiple lines and fold on char boundaries. 毎害止\
+                       加食\r\n 下組多地将写館来局必第。東証細再記得玲祉込吉宣会法\r\n 授";
+        assert_eq!(expected, fold_line(line));
+        assert_eq!("ab", fold_line("ab"));
+    }
+
+}
