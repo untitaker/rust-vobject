@@ -1,4 +1,23 @@
+sudo: false
+os:
+  - linux
+
+dist:
+  - trusty
+
 language: rust
 
 rust:
-    - stable
+  - 1.17.0
+  - 1.18.0
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+cache:
+  cargo: true
+
