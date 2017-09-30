@@ -184,3 +184,35 @@ impl Name {
 
 }
 
+#[cfg(test)]
+mod test {
+    use super::Vcard;
+
+    #[test]
+    fn test_vcard_basic() {
+        let item = Vcard::build(
+            "BEGIN:VCARD\n\
+            VERSION:2.1\n\
+            N:Mustermann;Erika\n\
+            FN:Erika Mustermann\n\
+            ORG:Wikipedia\n\
+            TITLE:Oberleutnant\n\
+            PHOTO;JPEG:http://commons.wikimedia.org/wiki/File:Erika_Mustermann_2010.jpg\n\
+            TEL;WORK;VOICE:(0221) 9999123\n\n\n\
+            TEL;HOME;VOICE:(0221) 1234567\n\
+            ADR;HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\n\
+            EMAIL;PREF;INTERNET:erika@mustermann.de\n\
+            REV:20140301T221110Z\n\
+            END:VCARD\n\r\n\n").unwrap();
+
+        assert_eq!(item.adr()[0].raw(), ";;Heidestrasse 17;Koeln;;51147;Deutschland");
+        assert_eq!(item.fullname()[0].raw(), "Erika Mustermann");
+        assert_eq!(item.name().unwrap().plain(), "Mustermann;Erika");
+        assert_eq!(item.name().unwrap().surname().unwrap()    , "Mustermann");
+        assert_eq!(item.name().unwrap().given_name().unwrap() , "Erika");
+        assert_eq!(item.org()[0].raw() , "Wikipedia");
+        assert_eq!(item.title()[0].raw() , "Oberleutnant");
+    }
+
+}
+
