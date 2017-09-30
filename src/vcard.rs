@@ -87,6 +87,7 @@ pub type Parameters = HashMap<String, String>;
 
 macro_rules! create_data_type {
     ( $name:ident ) => {
+        #[derive(Eq, PartialEq)]
         pub struct $name(String, Parameters);
 
         impl $name {
