@@ -94,6 +94,10 @@ macro_rules! create_data_type {
             fn new(raw: String, params: Parameters) -> $name {
                 $name(raw, params)
             }
+
+            pub fn raw(&self) -> &String {
+                &self.0
+            }
         }
 
         impl From<Property> for $name {
