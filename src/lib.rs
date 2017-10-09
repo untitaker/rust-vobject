@@ -1,6 +1,6 @@
 // DOCS
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::borrow::ToOwned;
 use std::str::FromStr;
 use std::fmt;
@@ -13,7 +13,7 @@ pub struct Property {
     pub name: String,
 
     /// Parameters.
-    pub params: HashMap<String, String>,
+    pub params: BTreeMap<String, String>,
 
     /// Value as unparsed string.
     pub raw_value: String,
@@ -31,7 +31,7 @@ impl Property {
     {
         Property {
             name: name.into(),
-            params: HashMap::new(),
+            params: BTreeMap::new(),
             raw_value: escape_chars(value.as_ref()),
             prop_group: None
         }
@@ -49,7 +49,7 @@ pub struct Component {
     pub name: String,
 
     /// The component's properties.
-    pub props: HashMap<String, Vec<Property>>,
+    pub props: BTreeMap<String, Vec<Property>>,
 
     /// The component's child- or sub-components.
     pub subcomponents: Vec<Component>
@@ -59,7 +59,7 @@ impl Component {
     pub fn new<N: Into<String>>(name: N) -> Component {
         Component {
             name: name.into(),
-            props: HashMap::new(),
+            props: BTreeMap::new(),
             subcomponents: vec![]
         }
     }
@@ -353,8 +353,8 @@ impl<'s> Parser<'s> {
         Ok((name, value))
     }
 
-    fn consume_params(&mut self) -> HashMap<String, String> {
-        let mut rv: HashMap<String, String> = HashMap::new();
+    fn consume_params(&mut self) -> BTreeMap<String, String> {
+        let mut rv: BTreeMap<String, String> = BTreeMap::new();
         while self.consume_only_char(';') {
             match self.consume_param() {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
