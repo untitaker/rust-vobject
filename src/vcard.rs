@@ -4,6 +4,7 @@ use component::Component;
 use component::parse_component;
 use property::Property;
 
+use std::result::Result as RResult;
 use error::*;
 
 pub struct Vcard(Component);
@@ -42,12 +43,22 @@ impl Vcard {
     ///
     pub fn build(s: &str) -> Result<Vcard> {
         parse_component(s)
-            .and_then(|c| if c.name == "VCARD" {
-                Ok(Vcard(c))
-            } else {
-                let kind = VObjectErrorKind::NotAVCard(s.to_owned());
-                Err(VObjectError::from_kind(kind))
+            .and_then(|c| {
+                Self::from_component(c)
+                    .map_err(|_| {
+                        let kind = VObjectErrorKind::NotAVCard(s.to_owned());
+                        VObjectError::from_kind(kind)
+                    })
             })
+    }
+
+    /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
+    pub fn from_component(c: Component)-> RResult<Vcard, Component> {
+        if c.name == "VCARD" {
+            Ok(Vcard(c))
+        } else {
+            Err(c)
+        }
     }
 
     make_getter_function_for_values!(adr            , "ADR"          , Adr);
