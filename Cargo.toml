@@ -13,5 +13,5 @@ authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
 
 [dependencies]
-error-chain = "0.10"
+error-chain = "0.11"
 
