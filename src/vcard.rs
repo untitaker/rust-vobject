@@ -329,5 +329,51 @@ mod test {
         assert_eq!(item.title()[0].raw() , "Oberleutnant");
     }
 
+    #[test]
+    fn test_vcard_builder() {
+        use component::write_component;
+
+        let build = Vcard::default()
+            .with_name(parameters!(),
+                       None,
+                       Some("Mustermann".into()),
+                       None,
+                       Some("Erika".into()),
+                       None)
+            .with_fullname("Erika Mustermann".into())
+            .with_org(vec!["Wikipedia".into()])
+            .with_title("Oberleutnant".into())
+            .with_tel(parameters!("TYPE" => "WORK"), "(0221) 9999123".into())
+            .with_tel(parameters!("TYPE" => "HOME"), "(0221) 1234567".into())
+            .with_adr(parameters!("TYPE" => "HOME"),
+                      None,
+                      None,
+                      Some("Heidestrasse 17".into()),
+                      Some("Koeln".into()),
+                      None,
+                      Some("51147".into()),
+                      Some("Deutschland".into()))
+            .with_email("erika@mustermann.de".into())
+            .with_rev("20140301T221110Z".into());
+
+        let build_string = write_component(&build);
+
+        let expected =
+            "BEGIN:VCARD\r\n\
+            ADR;TYPE=HOME:\\;\\;Heidestrasse 17\\;Koeln\\;\\;51147\\;Deutschland\r\n\
+            EMAIL:erika@mustermann.de\r\n\
+            FN:Erika Mustermann\r\n\
+            N:\\;Mustermann\\;\\;Erika\\;\r\n\
+            ORG:Wikipedia\r\n\
+            REV:20140301T221110Z\r\n\
+            TEL;TYPE=WORK:(0221) 9999123\r\n\
+            TEL;TYPE=HOME:(0221) 1234567\r\n\
+            TITLE:Oberleutnant\r\n\
+            END:VCARD\r\n";
+
+
+        assert_eq!(expected, build_string);
+    }
+
 }
 
