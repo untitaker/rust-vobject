@@ -14,4 +14,9 @@ keywords = ["vobject", "icalendar", "calendar", "contacts"]
 
 [dependencies]
 error-chain = "0.11"
+chrono      = { version = "0.4", optional = true }
+
+[features]
+default         = []
+timeconversions = ["chrono"]
 

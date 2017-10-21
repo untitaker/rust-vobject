@@ -5,6 +5,10 @@ error_chain! {
         VObjectError, VObjectErrorKind, ResultExt, Result;
     }
 
+    foreign_links {
+        ChronoParseError(::chrono::format::ParseError) #[cfg(feature = "timeconversions")];
+    }
+
     errors {
         ParserError(desc: String) {
             description("Parser error")
