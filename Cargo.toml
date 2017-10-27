@@ -11,3 +11,7 @@ keywords = ["vobject", "icalendar", "calendar", "contacts"]
 version = "0.3.0"
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
 license = "MIT"
+
+[dependencies]
+error-chain = "0.10"
+
