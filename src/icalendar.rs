@@ -166,3 +166,124 @@ impl AsDateTime for Dtstamp {
 
 }
 
+#[cfg(all(test, feature = "timeconversions"))]
+mod tests {
+    use super::*;
+    const TEST_ENTRY : &'static str =
+            "BEGIN:VCALENDAR\n\
+            VERSION:2.0\n\
+            PRODID:http://www.example.com/calendarapplication/\n\
+            METHOD:PUBLISH\n\
+            BEGIN:VEVENT\n\
+            UID:461092315540@example.com\n\
+            ORGANIZER;CN=\"Alice Balder, Example Inc.\":MAILTO:alice@example.com\n\
+            LOCATION:Somewhere\n\
+            SUMMARY:Eine Kurzinfo\n\
+            DESCRIPTION:Beschreibung des Termines\n\
+            CLASS:PUBLIC\n\
+            DTSTART:20060910T220000Z\n\
+            DTEND:20060919T215900Z\n\
+            DTSTAMP:20060812T125900Z\n\
+            END:VEVENT\n\
+            END:VCALENDAR\n";
+
+    const TEST_ENTRY_OC : &'static str = // Lets see how owncloud foo works here
+        "BEGIN:VCALENDAR\n\
+        VERSION:2.0\n\
+        PRODID:ownCloud Calendar\n\
+        CALSCALE:GREGORIAN\n\
+        BEGIN:VEVENT\n\
+        UID:ff411055a5\n\
+        DTSTAMP:20160128T223013Z\n\
+        CREATED:20160128T223013Z\n\
+        LAST-MODIFIED:20160128T223013Z\n\
+        SUMMARY:Amon Amarth - Jomsviking\n\
+        DTSTART;VALUE=DATE:20160325\n\
+        DTEND;VALUE=DATE:20160326\n\
+        LOCATION:\n\
+        DESCRIPTION:\n\
+        CATEGORIES:\n\
+        END:VEVENT\n\
+        END:VCALENDAR\n\
+        ";
+
+    #[test]
+    fn test_parse() {
+        let cal = Icalendar::build(TEST_ENTRY);
+        assert!(cal.is_ok(), "Not okay: {:?}\n in '{}'", cal, TEST_ENTRY);
+    }
+
+    #[test]
+    fn test_iter() {
+        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        assert_eq!(ical.events().count(), 1);
+    }
+
+    #[test]
+    fn test_icalendar_attributes() {
+        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
+        assert_eq!(ical.get_prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
+    }
+
+    #[test]
+    fn test_event_attributes() {
+        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
+        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
+        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
+        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
+        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
+        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
+        assert_eq!(ev.get_url()                                  , None);
+        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
+        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
+        assert_eq!(ev.get_categories()                           , None);
+        assert_eq!(ev.get_transp()                               , None);
+        assert_eq!(ev.get_rrule()                                , None);
+    }
+
+    #[test]
+    fn test_event_attributes_oc() {
+        let ical = Icalendar::build(TEST_ENTRY_OC).unwrap();
+        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
+        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
+        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
+        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
+        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
+        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("".to_owned()));
+        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
+        assert_eq!(ev.get_url()                                  , None);
+        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("".to_owned()));
+        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , None);
+        assert_eq!(ev.get_categories().map(|e| e.raw().clone())  , Some("".to_owned()));
+        assert_eq!(ev.get_transp()                               , None);
+        assert_eq!(ev.get_rrule()                                , None);
+    }
+
+    #[cfg(feature = "timeconversions")]
+    #[test]
+    fn test_event_attributes_with_conversions() {
+        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap()  , NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap());
+    }
+
+    #[cfg(feature = "timeconversions")]
+    #[test]
+    fn test_event_attributes_oc_with_conversions() {
+        let ical = Icalendar::build(TEST_ENTRY_OC).unwrap();
+        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
+        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160326", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160325", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap());
+    }
+
+}
