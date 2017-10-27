@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug)]
 pub struct Property {
@@ -6,7 +6,7 @@ pub struct Property {
     pub name: String,
 
     /// Parameters.
-    pub params: HashMap<String, String>,
+    pub params: BTreeMap<String, String>,
 
     /// Value as unparsed string.
     pub raw_value: String,
@@ -24,7 +24,7 @@ impl Property {
     {
         Property {
             name: name.into(),
-            params: HashMap::new(),
+            params: BTreeMap::new(),
             raw_value: escape_chars(value.as_ref()),
             prop_group: None
         }
