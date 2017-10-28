@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use property::Property;
 use parser::Parser;
@@ -11,7 +11,7 @@ pub struct Component {
     pub name: String,
 
     /// The component's properties.
-    pub props: HashMap<String, Vec<Property>>,
+    pub props: BTreeMap<String, Vec<Property>>,
 
     /// The component's child- or sub-components.
     pub subcomponents: Vec<Component>
@@ -21,7 +21,7 @@ impl Component {
     pub fn new<N: Into<String>>(name: N) -> Component {
         Component {
             name: name.into(),
-            props: HashMap::new(),
+            props: BTreeMap::new(),
             subcomponents: vec![]
         }
     }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use component::Component;
 use property::Property;
@@ -250,8 +250,8 @@ impl<'s> Parser<'s> {
         Ok((name, value))
     }
 
-    fn consume_params(&mut self) -> HashMap<String, String> {
-        let mut rv: HashMap<String, String> = HashMap::new();
+    fn consume_params(&mut self) -> BTreeMap<String, String> {
+        let mut rv: BTreeMap<String, String> = BTreeMap::new();
         while self.consume_only_char(';') {
             match self.consume_param() {
                 Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
