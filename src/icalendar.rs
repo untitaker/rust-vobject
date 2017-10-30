@@ -10,6 +10,9 @@ use util::*;
 #[cfg(feature = "timeconversions")]
 use chrono::NaiveDateTime;
 
+#[cfg(feature = "timeconversions")]
+use chrono::NaiveDate;
+
 /// An Icalendar representing type
 #[derive(Debug)]
 pub struct Icalendar(Component);
@@ -135,15 +138,27 @@ create_data_type!(Transp);
 create_data_type!(Rrule);
 
 #[cfg(feature = "timeconversions")]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
+pub enum Time {
+    Date(NaiveDate),
+    DateTime(NaiveDateTime),
+}
+
+#[cfg(feature = "timeconversions")]
 pub trait AsDateTime {
-    fn as_datetime(&self) -> Result<NaiveDateTime>;
+    fn as_datetime(&self) -> Result<Time>;
 }
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtend {
 
-    fn as_datetime(&self) -> Result<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT).map_err(From::from)
+    fn as_datetime(&self) -> Result<Time> {
+        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Ok(Time::DateTime(dt)),
+            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
+                .map(Time::Date)
+                .map_err(From::from),
+        }
     }
 
 }
@@ -151,8 +166,13 @@ impl AsDateTime for Dtend {
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstart {
 
-    fn as_datetime(&self) -> Result<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT).map_err(From::from)
+    fn as_datetime(&self) -> Result<Time> {
+        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Ok(Time::DateTime(dt)),
+            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
+                .map(Time::Date)
+                .map_err(From::from),
+        }
     }
 
 }
@@ -160,15 +180,25 @@ impl AsDateTime for Dtstart {
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstamp {
 
-    fn as_datetime(&self) -> Result<NaiveDateTime> {
-        NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT).map_err(From::from)
+    fn as_datetime(&self) -> Result<Time> {
+        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Ok(Time::DateTime(dt)),
+            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
+                .map(Time::Date)
+                .map_err(From::from),
+        }
     }
 
 }
 
 #[cfg(all(test, feature = "timeconversions"))]
 mod tests {
+    use chrono::NaiveDate;
+    use chrono::NaiveDateTime;
+    use util::*;
+
     use super::*;
+
     const TEST_ENTRY : &'static str =
             "BEGIN:VCALENDAR\n\
             VERSION:2.0\n\
@@ -269,9 +299,9 @@ mod tests {
     fn test_event_attributes_with_conversions() {
         let ical = Icalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap()  , NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap());
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap());
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
     }
 
     #[cfg(feature = "timeconversions")]
@@ -281,9 +311,9 @@ mod tests {
         assert_eq!(ical.get_version().unwrap().raw(), "2.0");
         assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160326", DATE_TIME_FMT).unwrap());
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160325", DATE_TIME_FMT).unwrap());
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap());
+        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
+        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
+        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
     }
 
 }
