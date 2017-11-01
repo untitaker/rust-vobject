@@ -85,7 +85,7 @@ impl Vcard {
             .and_then(|c| {
                 Self::from_component(c)
                     .map_err(|_| {
-                        let kind = VObjectErrorKind::NotAVCard(s.to_owned());
+                        let kind = VObjectErrorKind::NotAVCard;
                         VObjectError::from_kind(kind)
                     })
             })

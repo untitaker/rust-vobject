@@ -11,9 +11,9 @@ error_chain! {
             display("{}", desc)
         }
 
-        NotAVCard(content: String) {
+        NotAVCard {
             description("Input is not a valid VCard")
-            display("Not a VCard: '{}'", content)
+            display("Passed content string is not a VCard")
         }
 
     }
