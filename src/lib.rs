@@ -3,7 +3,7 @@
 #[macro_use]
 extern crate error_chain;
 
-#[macro_use] pub mod util;
+#[macro_use] pub mod param;
 pub mod component;
 pub mod error;
 mod parser;

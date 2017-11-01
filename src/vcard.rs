@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::ops::Deref;
 
 use component::Component;
@@ -7,7 +6,7 @@ use property::Property;
 
 use std::result::Result as RResult;
 use error::*;
-use util;
+use param::Parameters;
 
 pub struct Vcard(Component);
 
@@ -37,7 +36,7 @@ macro_rules! make_builder_fn {
         fn $fnname:ident building $property_name:tt with_params,
         $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
     ) => {
-        pub fn $fnname(mut self, params: util::Parameters, $( $arg_name : $arg_type ),*) -> Self {
+        pub fn $fnname(mut self, params: Parameters, $( $arg_name : $arg_type ),*) -> Self {
             let raw_value = vec![ $( $arg_name ),* ]
                 .into_iter()
                 .map($mapfn)
@@ -195,8 +194,6 @@ impl Deref for Vcard {
         &self.0
     }
 }
-
-pub type Parameters = BTreeMap<String, String>;
 
 macro_rules! create_data_type {
     ( $name:ident ) => {
