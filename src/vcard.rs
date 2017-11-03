@@ -8,6 +8,7 @@ use property::Property;
 use std::result::Result as RResult;
 use error::*;
 
+#[derive(Debug)]
 pub struct Vcard(Component);
 
 /// The Vcard object.
