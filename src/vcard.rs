@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::collections::BTreeMap;
 
 use component::Component;
 use component::parse_component;
@@ -43,8 +44,12 @@ macro_rules! make_builder_fn {
                 .collect::<Vec<_>>()
                 .join(";");
 
-            let mut prop = Property::new(String::from($property_name), raw_value);
-            prop.params = params;
+            let prop = Property {
+                name: String::from($property_name),
+                params: params,
+                raw_value: raw_value,
+                prop_group: None
+            };
             self.0.props.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
@@ -61,7 +66,12 @@ macro_rules! make_builder_fn {
                 .collect::<Vec<_>>()
                 .join(";");
 
-            let prop = Property::new(String::from($property_name), raw_value);
+            let prop = Property {
+                name: String::from($property_name),
+                params: BTreeMap::new(),
+                raw_value: raw_value,
+                prop_group: None
+            };
             self.0.props.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
@@ -357,10 +367,10 @@ mod test {
 
         let expected =
             "BEGIN:VCARD\r\n\
-            ADR;TYPE=HOME:\\;\\;Heidestrasse 17\\;Koeln\\;\\;51147\\;Deutschland\r\n\
+            ADR;TYPE=HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\r\n\
             EMAIL:erika@mustermann.de\r\n\
             FN:Erika Mustermann\r\n\
-            N:\\;Mustermann\\;\\;Erika\\;\r\n\
+            N:;Mustermann;;Erika;\r\n\
             ORG:Wikipedia\r\n\
             REV:20140301T221110Z\r\n\
             TEL;TYPE=WORK:(0221) 9999123\r\n\
