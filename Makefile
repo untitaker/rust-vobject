@@ -9,14 +9,14 @@ build:
 
 docs:
 	cd "$(THIS_DIR)"
-	cp src/vobject/lib.rs code.bak
+	cp src/lib.rs code.bak
 	cat README.md | sed -e 's/^/\/\/! /g' > readme.bak
-	sed -i '/\/\/ DOCS/r readme.bak' src/vobject/lib.rs
+	sed -i '/\/\/ DOCS/r readme.bak' src/lib.rs
 	(cargo doc --no-deps && make clean) || (make clean && false)
 
 clean:
 	cd "$(THIS_DIR)"
-	mv code.bak src/vobject/lib.rs || true
+	mv code.bak src/lib.rs || true
 	rm *.bak || true
 
 upload:
