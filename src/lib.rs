@@ -7,6 +7,7 @@ extern crate error_chain;
 extern crate chrono;
 
 #[macro_use] pub mod param;
+#[macro_use] mod util;
 
 pub mod component;
 pub mod error;
