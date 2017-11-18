@@ -25,13 +25,11 @@ impl ICalendar {
     /// returned also if this is a valid Vcard!)
     ///
     pub fn build(s: &str) -> Result<ICalendar> {
-        parse_component(s)
-            .and_then(|c| {
-                Self::from_component(c)
-                    .map_err(|_| {
-                        let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
-                        VObjectError::from_kind(kind)
-                    })
+        let c = parse_component(s)?;
+        Self::from_component(c)
+            .map_err(|_| {
+                let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
+                VObjectError::from_kind(kind)
             })
     }
 
