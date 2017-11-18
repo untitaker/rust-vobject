@@ -13,32 +13,32 @@ use chrono::NaiveDateTime;
 #[cfg(feature = "timeconversions")]
 use chrono::NaiveDate;
 
-/// An Icalendar representing type
+/// An ICalendar representing type
 #[derive(Debug)]
-pub struct Icalendar(Component);
+pub struct ICalendar(Component);
 
-impl Icalendar {
+impl ICalendar {
 
-    /// Parse a string to a Icalendar object
+    /// Parse a string to a ICalendar object
     ///
-    /// Returns an error if the parsed text is not a Icalendar (that means that an error is
-    /// returned also if this is a valid vcard!)
+    /// Returns an error if the parsed text is not a ICalendar (that means that an error is
+    /// returned also if this is a valid Vcard!)
     ///
-    pub fn build(s: &str) -> Result<Icalendar> {
+    pub fn build(s: &str) -> Result<ICalendar> {
         parse_component(s)
             .and_then(|c| {
                 Self::from_component(c)
                     .map_err(|_| {
-                        let kind = VObjectErrorKind::NotAnIcalendar(s.to_owned());
+                        let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
                         VObjectError::from_kind(kind)
                     })
             })
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
-    pub fn from_component(c: Component)-> RResult<Icalendar, Component> {
+    pub fn from_component(c: Component)-> RResult<ICalendar, Component> {
         if c.name == "VCALENDAR" {
-            Ok(Icalendar(c))
+            Ok(ICalendar(c))
         } else {
             Err(c)
         }
@@ -57,8 +57,8 @@ impl Icalendar {
     /// # use std::collections::BTreeMap;
     /// # use vobject::component::Component;
     /// # use vobject::icalendar::Event;
-    /// # use vobject::icalendar::Icalendar;
-    /// # let icalendar = Icalendar::from_component(Component {
+    /// # use vobject::icalendar::ICalendar;
+    /// # let icalendar = ICalendar::from_component(Component {
     /// #     name:          "VCALENDAR".to_owned(),
     /// #     props:         BTreeMap::new(),
     /// #     subcomponents: vec![]
@@ -239,26 +239,26 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let cal = Icalendar::build(TEST_ENTRY);
+        let cal = ICalendar::build(TEST_ENTRY);
         assert!(cal.is_ok(), "Not okay: {:?}\n in '{}'", cal, TEST_ENTRY);
     }
 
     #[test]
     fn test_iter() {
-        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY).unwrap();
         assert_eq!(ical.events().count(), 1);
     }
 
     #[test]
     fn test_icalendar_attributes() {
-        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY).unwrap();
         assert_eq!(ical.get_version().unwrap().raw(), "2.0");
         assert_eq!(ical.get_prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
     }
 
     #[test]
     fn test_event_attributes() {
-        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
         assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
         assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_event_attributes_oc() {
-        let ical = Icalendar::build(TEST_ENTRY_OC).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
         assert_eq!(ical.get_version().unwrap().raw(), "2.0");
         assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
@@ -297,7 +297,7 @@ mod tests {
     #[cfg(feature = "timeconversions")]
     #[test]
     fn test_event_attributes_with_conversions() {
-        let ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
         assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
         assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
@@ -307,7 +307,7 @@ mod tests {
     #[cfg(feature = "timeconversions")]
     #[test]
     fn test_event_attributes_oc_with_conversions() {
-        let ical = Icalendar::build(TEST_ENTRY_OC).unwrap();
+        let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
         assert_eq!(ical.get_version().unwrap().raw(), "2.0");
         assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
