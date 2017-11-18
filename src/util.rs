@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 #[macro_export]
 macro_rules! make_getter_function_for_optional {
     ($fnname:ident, $name:expr, $mapper:ty) => {

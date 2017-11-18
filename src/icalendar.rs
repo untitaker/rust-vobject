@@ -3,7 +3,6 @@ use std::result::Result as RResult;
 use component::Component;
 use component::parse_component;
 use property::Property;
-use param::Parameters;
 use error::*;
 use util::*;
 
