@@ -14,9 +14,8 @@ rust:
   - beta
 
 script:
-  - |
-      cargo build --features timeconversions &&
-      cargo test  --features timeconversions
+  - cargo build --features timeconversions
+  - cargo test  --features timeconversions
 
 cache:
   cargo: true
