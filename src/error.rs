@@ -5,6 +5,10 @@ error_chain! {
         VObjectError, VObjectErrorKind, ResultExt, Result;
     }
 
+    foreign_links {
+        ChronoParseError(::chrono::format::ParseError) #[cfg(feature = "timeconversions")];
+    }
+
     errors {
         ParserError(desc: String) {
             description("Parser error")
@@ -16,6 +20,10 @@ error_chain! {
             display("Passed content string is not a VCard")
         }
 
+        NotAnICalendar(content: String) {
+            description("Input is not a valid ICalendar")
+            display("Not an ICalendar: '{}'", content)
+        }
     }
 
 
