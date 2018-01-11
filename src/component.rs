@@ -78,15 +78,26 @@ impl FromStr for Component {
 
 /// Parse exactly one component. Trailing data generates errors.
 pub fn parse_component(s: &str) -> Result<Component> {
+    let (rv, new_s) = try!(read_component(s));
+    if !new_s.is_empty() {
+        let s = format!("Trailing data: `{}`", new_s);
+        let kind = VObjectErrorKind::ParserError(s);
+        return Err(VObjectError::from_kind(kind));
+    }
+
+    Ok(rv)
+}
+
+/// Parse one component and return the rest of the string.
+pub fn read_component(s: &str) -> Result<(Component, &str)> {
     let mut parser = Parser::new(s);
     let rv = try!(parser.consume_component());
-    if !parser.eof() {
-        let s = format!("Trailing data: `{}`", &parser.input[parser.pos..]);
-        let kind = VObjectErrorKind::ParserError(s);
-        Err(VObjectError::from_kind(kind))
+    let new_s = if parser.eof() {
+        ""
     } else {
-        Ok(rv)
-    }
+        &parser.input[parser.pos..]
+    };
+    Ok((rv, new_s))
 }
 
 /// Write a component to a String.
