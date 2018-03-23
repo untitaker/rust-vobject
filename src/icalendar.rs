@@ -1,4 +1,5 @@
 use std::result::Result as RResult;
+use std::collections::BTreeMap;
 
 use component::Component;
 use component::parse_component;
@@ -30,6 +31,17 @@ impl ICalendar {
                 let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
                 VObjectError::from_kind(kind)
             })
+    }
+
+    /// Add an event to the calendar
+    pub fn add_event(&mut self, builder: EventBuilder) {
+        self.0.subcomponents.push(builder.into_component())
+    }
+
+    /// Chainable variant of `Icalendar::add_event()`.
+    pub fn push_event(mut self, builder: EventBuilder) -> Self {
+        self.0.subcomponents.push(builder.into_component());
+        self
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
@@ -119,6 +131,11 @@ impl<'a> Event<'a> {
     make_getter_function_for_optional!(get_categories  , "CATEGORIES"  , Categories);
     make_getter_function_for_optional!(get_transp      , "TRANSP"      , Transp);
     make_getter_function_for_optional!(get_rrule       , "RRULE"       , Rrule);
+
+    pub fn build() -> EventBuilder {
+        EventBuilder(Component::new(String::from("VEVENT")))
+    }
+
 }
 
 create_data_type!(Dtend);
@@ -185,6 +202,74 @@ impl AsDateTime for Dtstamp {
                 .map_err(From::from),
         }
     }
+
+}
+
+#[derive(Clone, Debug)]
+pub struct EventBuilder(Component);
+
+macro_rules! make_setter_function_for {
+    ($fnname:ident, $name:expr) => {
+        pub fn $fnname(&mut self, value: String, params: Option<BTreeMap<String, String>>) {
+            let property = Property {
+                name:       String::from($name),
+                params:     params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value:  value,
+                prop_group: None,
+            };
+
+            self.0.set(property);
+        }
+    };
+}
+
+macro_rules! make_pusher_function_for {
+    ($fnname:ident, $name:expr) => {
+        pub fn $fnname(&mut self, value: String, params: Option<BTreeMap<String, String>>) {
+            let property = Property {
+                name:       String::from($name),
+                params:     params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value:  value,
+                prop_group: None,
+            };
+
+            self.0.push(property);
+        }
+    };
+}
+
+impl EventBuilder {
+
+    /// Private function for adding event to calendar
+    fn into_component(self) -> Component {
+        self.0
+    }
+
+    make_setter_function_for!(set_dtend       , "DTEND"       );
+    make_setter_function_for!(set_dtstart     , "DTSTART"     );
+    make_setter_function_for!(set_dtstamp     , "DTSTAMP"     );
+    make_setter_function_for!(set_uid         , "UID"         );
+    make_setter_function_for!(set_description , "DESCRIPTION" );
+    make_setter_function_for!(set_summary     , "SUMMARY"     );
+    make_setter_function_for!(set_url         , "URL"         );
+    make_setter_function_for!(set_location    , "LOCATION"    );
+    make_setter_function_for!(set_class       , "CLASS"       );
+    make_setter_function_for!(set_categories  , "CATEGORIES"  );
+    make_setter_function_for!(set_transp      , "TRANSP"      );
+    make_setter_function_for!(set_rrule       , "RRULE"       );
+
+    make_pusher_function_for!(push_dtend       , "DTEND"      );
+    make_pusher_function_for!(push_dtstart     , "DTSTART"    );
+    make_pusher_function_for!(push_dtstamp     , "DTSTAMP"    );
+    make_pusher_function_for!(push_uid         , "UID"        );
+    make_pusher_function_for!(push_description , "DESCRIPTION");
+    make_pusher_function_for!(push_summary     , "SUMMARY"    );
+    make_pusher_function_for!(push_url         , "URL"        );
+    make_pusher_function_for!(push_location    , "LOCATION"   );
+    make_pusher_function_for!(push_class       , "CLASS"      );
+    make_pusher_function_for!(push_categories  , "CATEGORIES" );
+    make_pusher_function_for!(push_transp      , "TRANSP"     );
+    make_pusher_function_for!(push_rrule       , "RRULE"      );
 
 }
 
