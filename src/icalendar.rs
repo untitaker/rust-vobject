@@ -5,7 +5,6 @@ use component::Component;
 use component::parse_component;
 use property::Property;
 use error::*;
-use util::*;
 
 #[cfg(feature = "timeconversions")]
 use chrono::NaiveDateTime;
