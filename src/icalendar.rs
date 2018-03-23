@@ -398,4 +398,20 @@ mod tests {
         assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
     }
 
+    #[test]
+    fn test_build_event() {
+        let mut ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let mut builder = Event::build();
+        builder.set_description(String::from("test"), None);
+        builder.set_uid(String::from("testuid"), None);
+        builder.set_summary(String::from("summary"), None);
+        ical.add_event(builder);
+
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("testuid".to_owned()));
+        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("test".to_owned()));
+        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("summary".to_owned()));
+
+    }
+
 }
