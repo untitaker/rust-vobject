@@ -35,6 +35,10 @@ macro_rules! create_data_type {
             pub fn raw(&self) -> &String {
                 &self.0
             }
+
+            pub fn into_raw(self) -> String {
+                self.0
+            }
         }
 
         impl From<Property> for $name {

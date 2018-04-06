@@ -208,12 +208,12 @@ impl AsDateTime for Dtstamp {
 pub struct EventBuilder(Component);
 
 macro_rules! make_setter_function_for {
-    ($fnname:ident, $name:expr) => {
-        pub fn $fnname(&mut self, value: String, params: Option<BTreeMap<String, String>>) {
+    ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
             let property = Property {
                 name:       String::from($name),
                 params:     params.unwrap_or_else(|| BTreeMap::new()),
-                raw_value:  value,
+                raw_value:  $tostring(value),
                 prop_group: None,
             };
 
@@ -223,12 +223,12 @@ macro_rules! make_setter_function_for {
 }
 
 macro_rules! make_pusher_function_for {
-    ($fnname:ident, $name:expr) => {
-        pub fn $fnname(&mut self, value: String, params: Option<BTreeMap<String, String>>) {
+    ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
             let property = Property {
                 name:       String::from($name),
                 params:     params.unwrap_or_else(|| BTreeMap::new()),
-                raw_value:  value,
+                raw_value:  $tostring(value),
                 prop_group: None,
             };
 
@@ -244,31 +244,31 @@ impl EventBuilder {
         self.0
     }
 
-    make_setter_function_for!(set_dtend       , "DTEND"       );
-    make_setter_function_for!(set_dtstart     , "DTSTART"     );
-    make_setter_function_for!(set_dtstamp     , "DTSTAMP"     );
-    make_setter_function_for!(set_uid         , "UID"         );
-    make_setter_function_for!(set_description , "DESCRIPTION" );
-    make_setter_function_for!(set_summary     , "SUMMARY"     );
-    make_setter_function_for!(set_url         , "URL"         );
-    make_setter_function_for!(set_location    , "LOCATION"    );
-    make_setter_function_for!(set_class       , "CLASS"       );
-    make_setter_function_for!(set_categories  , "CATEGORIES"  );
-    make_setter_function_for!(set_transp      , "TRANSP"      );
-    make_setter_function_for!(set_rrule       , "RRULE"       );
+    make_setter_function_for!(set_dtend       , "DTEND"       , Dtend       , Dtend::into_raw);
+    make_setter_function_for!(set_dtstart     , "DTSTART"     , Dtstart     , Dtstart::into_raw);
+    make_setter_function_for!(set_dtstamp     , "DTSTAMP"     , Dtstamp     , Dtstamp::into_raw);
+    make_setter_function_for!(set_uid         , "UID"         , Uid         , Uid::into_raw);
+    make_setter_function_for!(set_description , "DESCRIPTION" , Description , Description::into_raw);
+    make_setter_function_for!(set_summary     , "SUMMARY"     , Summary     , Summary::into_raw);
+    make_setter_function_for!(set_url         , "URL"         , Url         , Url::into_raw);
+    make_setter_function_for!(set_location    , "LOCATION"    , Location    , Location::into_raw);
+    make_setter_function_for!(set_class       , "CLASS"       , Class       , Class::into_raw);
+    make_setter_function_for!(set_categories  , "CATEGORIES"  , Categories  , Categories::into_raw);
+    make_setter_function_for!(set_transp      , "TRANSP"      , Transp      , Transp::into_raw);
+    make_setter_function_for!(set_rrule       , "RRULE"       , Rrule       , Rrule::into_raw);
 
-    make_pusher_function_for!(push_dtend       , "DTEND"      );
-    make_pusher_function_for!(push_dtstart     , "DTSTART"    );
-    make_pusher_function_for!(push_dtstamp     , "DTSTAMP"    );
-    make_pusher_function_for!(push_uid         , "UID"        );
-    make_pusher_function_for!(push_description , "DESCRIPTION");
-    make_pusher_function_for!(push_summary     , "SUMMARY"    );
-    make_pusher_function_for!(push_url         , "URL"        );
-    make_pusher_function_for!(push_location    , "LOCATION"   );
-    make_pusher_function_for!(push_class       , "CLASS"      );
-    make_pusher_function_for!(push_categories  , "CATEGORIES" );
-    make_pusher_function_for!(push_transp      , "TRANSP"     );
-    make_pusher_function_for!(push_rrule       , "RRULE"      );
+    make_pusher_function_for!(push_dtend       , "DTEND"       , Dtend       , Dtend::into_raw);
+    make_pusher_function_for!(push_dtstart     , "DTSTART"     , Dtstart     , Dtstart::into_raw);
+    make_pusher_function_for!(push_dtstamp     , "DTSTAMP"     , Dtstamp     , Dtstamp::into_raw);
+    make_pusher_function_for!(push_uid         , "UID"         , Uid         , Uid::into_raw);
+    make_pusher_function_for!(push_description , "DESCRIPTION" , Description , Description::into_raw);
+    make_pusher_function_for!(push_summary     , "SUMMARY"     , Summary     , Summary::into_raw);
+    make_pusher_function_for!(push_url         , "URL"         , Url         , Url::into_raw);
+    make_pusher_function_for!(push_location    , "LOCATION"    , Location    , Location::into_raw);
+    make_pusher_function_for!(push_class       , "CLASS"       , Class       , Class::into_raw);
+    make_pusher_function_for!(push_categories  , "CATEGORIES"  , Categories  , Categories::into_raw);
+    make_pusher_function_for!(push_transp      , "TRANSP"      , Transp      , Transp::into_raw);
+    make_pusher_function_for!(push_rrule       , "RRULE"       , Rrule       , Rrule::into_raw);
 
 }
 
@@ -402,9 +402,16 @@ mod tests {
     fn test_build_event() {
         let mut ical = ICalendar::build(TEST_ENTRY).unwrap();
         let mut builder = Event::build();
-        builder.set_description(String::from("test"), None);
-        builder.set_uid(String::from("testuid"), None);
-        builder.set_summary(String::from("summary"), None);
+
+        let desc = Description::new(String::from("test"), BTreeMap::new());
+        builder.set_description(desc, None);
+
+        let uid = Uid::new(String::from("testuid"), BTreeMap::new());
+        builder.set_uid(uid, None);
+
+        let summary = Summary::new(String::from("summary"), BTreeMap::new());
+        builder.set_summary(summary, None);
+
         ical.add_event(builder);
 
         let ev = ical.events().next().unwrap().unwrap();
