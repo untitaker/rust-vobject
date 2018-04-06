@@ -37,7 +37,7 @@ impl ICalendar {
         self.0.subcomponents.push(builder.into_component())
     }
 
-    /// Chainable variant of `Icalendar::add_event()`.
+    /// Chainable variant of `ICalendar::add_event()`.
     pub fn push_event(mut self, builder: EventBuilder) -> Self {
         self.0.subcomponents.push(builder.into_component());
         self
@@ -277,6 +277,7 @@ mod tests {
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;
     use util::*;
+    use super::ICalendar;
 
     use super::*;
 
@@ -399,7 +400,7 @@ mod tests {
 
     #[test]
     fn test_build_event() {
-        let mut ical = Icalendar::build(TEST_ENTRY).unwrap();
+        let mut ical = ICalendar::build(TEST_ENTRY).unwrap();
         let mut builder = Event::build();
         builder.set_description(String::from("test"), None);
         builder.set_uid(String::from("testuid"), None);
