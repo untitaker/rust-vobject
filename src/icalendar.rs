@@ -6,11 +6,11 @@ use component::parse_component;
 use property::Property;
 use error::*;
 
-#[cfg(feature = "timeconversions")]
-use chrono::NaiveDateTime;
+#[cfg(feature = "timeconversions")] use chrono::NaiveDateTime;
+#[cfg(feature = "timeconversions")] use chrono::NaiveDate;
 
-#[cfg(feature = "timeconversions")]
-use chrono::NaiveDate;
+#[cfg(feature = "timeconversions")] use util::DATE_TIME_FMT;
+#[cfg(feature = "timeconversions")] use util::DATE_FMT;
 
 /// An ICalendar representing type
 #[derive(Debug)]
