@@ -28,8 +28,12 @@ macro_rules! create_data_type {
         pub struct $name(String, $crate::param::Parameters);
 
         impl $name {
-            fn new(raw: String, params: $crate::param::Parameters) -> $name {
+            pub fn new(raw: String, params: $crate::param::Parameters) -> $name {
                 $name(raw, params)
+            }
+
+            pub fn from_raw(raw: String) -> $name {
+                $name(raw, BTreeMap::new())
             }
 
             pub fn raw(&self) -> &String {
