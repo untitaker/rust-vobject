@@ -32,6 +32,11 @@ impl ICalendar {
             })
     }
 
+    pub fn empty() -> ICalendar {
+        let c = Component::new("VCALENDAR");
+        ICalendar(c)
+    }
+
     /// Add an event to the calendar
     pub fn add_event(&mut self, builder: EventBuilder) {
         self.0.subcomponents.push(builder.into_component())
@@ -400,7 +405,7 @@ mod tests {
 
     #[test]
     fn test_build_event() {
-        let mut ical = ICalendar::build(TEST_ENTRY).unwrap();
+        let mut ical = ICalendar::empty();
         let mut builder = Event::build();
 
         let desc = Description::new(String::from("test"), BTreeMap::new());
