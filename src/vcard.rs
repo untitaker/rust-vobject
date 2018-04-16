@@ -33,6 +33,11 @@ impl Vcard {
             })
     }
 
+    /// Helper for `VcardBuilder::new()`
+    pub fn builder() -> VcardBuilder {
+        VcardBuilder::new()
+    }
+
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
     pub fn from_component(c: Component)-> RResult<Vcard, Component> {
         if c.name == "VCARD" {
@@ -72,6 +77,92 @@ impl Vcard {
     make_getter_function_for_optional!(uid          , "UID"          , Uid);
     make_getter_function_for_values!(url            , "URL"          , Url);
     make_getter_function_for_optional!(version      , "VERSION"      , Version);
+
+    fn set_properties(&mut self, props: BTreeMap<String, Vec<Property>>) {
+        self.0.props = props;
+    }
+
+}
+
+impl Default for Vcard {
+    fn default() -> Self {
+        Vcard(Component::new(String::from("VCARD")))
+    }
+}
+
+impl Deref for Vcard {
+    type Target = Component;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// A builder for building a Vcard object.
+pub struct VcardBuilder {
+    properties: BTreeMap<String, Vec<Property>>
+}
+
+macro_rules! make_builder_fn {
+    (
+        fn $fnname:ident building $property_name:tt with_params,
+        $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
+    ) => {
+        pub fn $fnname(mut self, params: $crate::param::Parameters, $( $arg_name : $arg_type ),*) -> Self {
+            let raw_value = vec![ $( $arg_name ),* ]
+                .into_iter()
+                .map($mapfn)
+                .collect::<Vec<_>>()
+                .join(";");
+
+            let prop = Property {
+                name: String::from($property_name),
+                params: params,
+                raw_value: raw_value,
+                prop_group: None
+            };
+
+            self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
+            self
+        }
+    };
+
+    (
+        fn $fnname:ident building $property_name:tt,
+        $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
+    ) => {
+        pub fn $fnname(mut self, $( $arg_name : $arg_type ),*) -> Self {
+            let raw_value = vec![ $( $arg_name ),* ]
+                .into_iter()
+                .map($mapfn)
+                .collect::<Vec<_>>()
+                .join(";");
+
+
+            let prop = Property {
+                name: String::from($property_name),
+                params: BTreeMap::new(),
+                raw_value: raw_value,
+                prop_group: None
+            };
+            self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
+            self
+        }
+    }
+}
+
+impl VcardBuilder {
+    pub fn new() -> Self {
+        VcardBuilder {
+            properties: BTreeMap::new(),
+        }
+    }
+
+    pub fn build(self) -> Result<Vcard> {
+        let mut v = Vcard::default();
+        v.set_properties(self.properties);
+        Ok(v)
+    }
 
     make_builder_fn!(fn with_adr building "ADR" with_params,
                      |o| o.unwrap_or(String::from("")) =>
@@ -121,20 +212,6 @@ impl Vcard {
     make_builder_fn!(fn with_url      building "URL"                  , |o| o => uri: String);
     make_builder_fn!(fn with_version  building "VERSION"              , |o| o => version: String);
 
-}
-
-impl Default for Vcard {
-    fn default() -> Self {
-        Vcard(Component::new(String::from("VCARD")))
-    }
-}
-
-impl Deref for Vcard {
-    type Target = Component;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
 }
 
 create_data_type!(Adr);
@@ -213,8 +290,6 @@ impl Name {
 
 }
 
-pub struct VcardBuilder(Component);
-
 #[cfg(test)]
 mod test {
     use super::Vcard;
@@ -249,7 +324,7 @@ mod test {
     fn test_vcard_builder() {
         use component::write_component;
 
-        let build = Vcard::default()
+        let build = Vcard::builder()
             .with_name(parameters!(),
                        None,
                        Some("Mustermann".into()),
@@ -270,7 +345,9 @@ mod test {
                       Some("51147".into()),
                       Some("Deutschland".into()))
             .with_email("erika@mustermann.de".into())
-            .with_rev("20140301T221110Z".into());
+            .with_rev("20140301T221110Z".into())
+            .build()
+            .unwrap();
 
         let build_string = write_component(&build);
 
