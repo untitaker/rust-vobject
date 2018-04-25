@@ -494,18 +494,18 @@ mod tests {
     fn test_event_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
-        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
-        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
-        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
-        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
-        assert_eq!(ev.get_url()                                  , None);
-        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
-        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
-        assert_eq!(ev.get_categories()                           , None);
-        assert_eq!(ev.get_transp()                               , None);
-        assert_eq!(ev.get_rrule()                                , None);
+        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
+        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
+        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
+        assert_eq!(ev.url()                                  , None);
+        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
+        assert_eq!(ev.class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
+        assert_eq!(ev.categories()                           , None);
+        assert_eq!(ev.transp()                               , None);
+        assert_eq!(ev.rrule()                                , None);
     }
 
     #[test]
@@ -514,18 +514,18 @@ mod tests {
         assert_eq!(ical.get_version().unwrap().raw(), "2.0");
         assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
-        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
-        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
-        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("".to_owned()));
-        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
-        assert_eq!(ev.get_url()                                  , None);
-        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("".to_owned()));
-        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , None);
-        assert_eq!(ev.get_categories().map(|e| e.raw().clone())  , Some("".to_owned()));
-        assert_eq!(ev.get_transp()                               , None);
-        assert_eq!(ev.get_rrule()                                , None);
+        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
+        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
+        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
+        assert_eq!(ev.url()                                  , None);
+        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("".to_owned()));
+        assert_eq!(ev.class().map(|e| e.raw().clone())       , None);
+        assert_eq!(ev.categories().map(|e| e.raw().clone())  , Some("".to_owned()));
+        assert_eq!(ev.transp()                               , None);
+        assert_eq!(ev.rrule()                                , None);
     }
 
     #[cfg(feature = "timeconversions")]
@@ -533,21 +533,21 @@ mod tests {
     fn test_event_attributes_with_conversions() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
     }
 
     #[cfg(feature = "timeconversions")]
     #[test]
     fn test_event_attributes_oc_with_conversions() {
         let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
+        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
+        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
     }
 
     #[test]
@@ -567,9 +567,9 @@ mod tests {
         ical.add_event(builder);
 
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("testuid".to_owned()));
-        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("test".to_owned()));
-        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("summary".to_owned()));
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("testuid".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("test".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("summary".to_owned()));
 
     }
 
