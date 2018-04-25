@@ -123,18 +123,18 @@ impl<'a> Event<'a> {
         }
     }
 
-    make_getter_function_for_optional!(get_dtend       , "DTEND"       , Dtend);
-    make_getter_function_for_optional!(get_dtstart     , "DTSTART"     , Dtstart);
-    make_getter_function_for_optional!(get_dtstamp     , "DTSTAMP"     , Dtstamp);
-    make_getter_function_for_optional!(get_uid         , "UID"         , Uid);
-    make_getter_function_for_optional!(get_description , "DESCRIPTION" , Description);
-    make_getter_function_for_optional!(get_summary     , "SUMMARY"     , Summary);
-    make_getter_function_for_optional!(get_url         , "URL"         , Url);
-    make_getter_function_for_optional!(get_location    , "LOCATION"    , Location);
-    make_getter_function_for_optional!(get_class       , "CLASS"       , Class);
-    make_getter_function_for_optional!(get_categories  , "CATEGORIES"  , Categories);
-    make_getter_function_for_optional!(get_transp      , "TRANSP"      , Transp);
-    make_getter_function_for_optional!(get_rrule       , "RRULE"       , Rrule);
+    make_getter_function_for_optional!(dtend       , "DTEND"       , Dtend);
+    make_getter_function_for_optional!(dtstart     , "DTSTART"     , Dtstart);
+    make_getter_function_for_optional!(dtstamp     , "DTSTAMP"     , Dtstamp);
+    make_getter_function_for_optional!(uid         , "UID"         , Uid);
+    make_getter_function_for_optional!(description , "DESCRIPTION" , Description);
+    make_getter_function_for_optional!(summary     , "SUMMARY"     , Summary);
+    make_getter_function_for_optional!(url         , "URL"         , Url);
+    make_getter_function_for_optional!(location    , "LOCATION"    , Location);
+    make_getter_function_for_optional!(class       , "CLASS"       , Class);
+    make_getter_function_for_optional!(categories  , "CATEGORIES"  , Categories);
+    make_getter_function_for_optional!(transp      , "TRANSP"      , Transp);
+    make_getter_function_for_optional!(rrule       , "RRULE"       , Rrule);
 
     pub fn build() -> EventBuilder {
         EventBuilder(Component::new(String::from("VEVENT")))
