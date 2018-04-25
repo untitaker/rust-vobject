@@ -486,8 +486,8 @@ mod tests {
     #[test]
     fn test_icalendar_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
     }
 
     #[test]
@@ -511,8 +511,8 @@ mod tests {
     #[test]
     fn test_event_attributes_oc() {
         let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
         assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
         assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
