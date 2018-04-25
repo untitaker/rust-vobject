@@ -87,8 +87,8 @@ impl ICalendar {
         EventIterator::new(self.0.subcomponents.iter())
     }
 
-    make_getter_function_for_optional!(get_version, "VERSION", Version);
-    make_getter_function_for_optional!(get_prodid, "PRODID", Prodid);
+    make_getter_function_for_optional!(version, "VERSION", Version);
+    make_getter_function_for_optional!(prodid, "PRODID", Prodid);
 }
 
 create_data_type!(Version);
