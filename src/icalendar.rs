@@ -229,7 +229,7 @@ macro_rules! make_setter_function_for {
 
 macro_rules! make_function_for {
     ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
-        pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
+        pub fn $fnname(mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
             let property = Property {
                 name:       String::from($name),
                 params:     params.unwrap_or_else(|| BTreeMap::new()),
