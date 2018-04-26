@@ -1,16 +1,16 @@
 use std::result::Result as RResult;
+use std::collections::BTreeMap;
 
 use component::Component;
 use component::parse_component;
 use property::Property;
 use error::*;
-use util::*;
 
-#[cfg(feature = "timeconversions")]
-use chrono::NaiveDateTime;
+#[cfg(feature = "timeconversions")] use chrono::NaiveDateTime;
+#[cfg(feature = "timeconversions")] use chrono::NaiveDate;
 
-#[cfg(feature = "timeconversions")]
-use chrono::NaiveDate;
+#[cfg(feature = "timeconversions")] use util::DATE_TIME_FMT;
+#[cfg(feature = "timeconversions")] use util::DATE_FMT;
 
 /// An ICalendar representing type
 #[derive(Debug)]
@@ -30,6 +30,22 @@ impl ICalendar {
                 let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
                 VObjectError::from_kind(kind)
             })
+    }
+
+    pub fn empty() -> ICalendar {
+        let c = Component::new("VCALENDAR");
+        ICalendar(c)
+    }
+
+    /// Add an event to the calendar
+    pub fn add_event(&mut self, builder: EventBuilder) {
+        self.0.subcomponents.push(builder.into_component())
+    }
+
+    /// Chainable variant of `ICalendar::add_event()`.
+    pub fn with_event(mut self, builder: EventBuilder) -> Self {
+        self.0.subcomponents.push(builder.into_component());
+        self
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
@@ -71,8 +87,8 @@ impl ICalendar {
         EventIterator::new(self.0.subcomponents.iter())
     }
 
-    make_getter_function_for_optional!(get_version, "VERSION", Version);
-    make_getter_function_for_optional!(get_prodid, "PRODID", Prodid);
+    make_getter_function_for_optional!(version, "VERSION", Version);
+    make_getter_function_for_optional!(prodid, "PRODID", Prodid);
 }
 
 create_data_type!(Version);
@@ -107,18 +123,23 @@ impl<'a> Event<'a> {
         }
     }
 
-    make_getter_function_for_optional!(get_dtend       , "DTEND"       , Dtend);
-    make_getter_function_for_optional!(get_dtstart     , "DTSTART"     , Dtstart);
-    make_getter_function_for_optional!(get_dtstamp     , "DTSTAMP"     , Dtstamp);
-    make_getter_function_for_optional!(get_uid         , "UID"         , Uid);
-    make_getter_function_for_optional!(get_description , "DESCRIPTION" , Description);
-    make_getter_function_for_optional!(get_summary     , "SUMMARY"     , Summary);
-    make_getter_function_for_optional!(get_url         , "URL"         , Url);
-    make_getter_function_for_optional!(get_location    , "LOCATION"    , Location);
-    make_getter_function_for_optional!(get_class       , "CLASS"       , Class);
-    make_getter_function_for_optional!(get_categories  , "CATEGORIES"  , Categories);
-    make_getter_function_for_optional!(get_transp      , "TRANSP"      , Transp);
-    make_getter_function_for_optional!(get_rrule       , "RRULE"       , Rrule);
+    make_getter_function_for_optional!(dtend       , "DTEND"       , Dtend);
+    make_getter_function_for_optional!(dtstart     , "DTSTART"     , Dtstart);
+    make_getter_function_for_optional!(dtstamp     , "DTSTAMP"     , Dtstamp);
+    make_getter_function_for_optional!(uid         , "UID"         , Uid);
+    make_getter_function_for_optional!(description , "DESCRIPTION" , Description);
+    make_getter_function_for_optional!(summary     , "SUMMARY"     , Summary);
+    make_getter_function_for_optional!(url         , "URL"         , Url);
+    make_getter_function_for_optional!(location    , "LOCATION"    , Location);
+    make_getter_function_for_optional!(class       , "CLASS"       , Class);
+    make_getter_function_for_optional!(categories  , "CATEGORIES"  , Categories);
+    make_getter_function_for_optional!(transp      , "TRANSP"      , Transp);
+    make_getter_function_for_optional!(rrule       , "RRULE"       , Rrule);
+
+    pub fn build() -> EventBuilder {
+        EventBuilder(Component::new(String::from("VEVENT")))
+    }
+
 }
 
 create_data_type!(Dtend);
@@ -188,11 +209,227 @@ impl AsDateTime for Dtstamp {
 
 }
 
+#[derive(Clone, Debug)]
+pub struct EventBuilder(Component);
+
+macro_rules! make_setter_function_for {
+    ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
+            let property = Property {
+                name:       String::from($name),
+                params:     params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value:  $tostring(value),
+                prop_group: None,
+            };
+
+            self.0.set(property);
+        }
+    };
+}
+
+macro_rules! make_function_for {
+    ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        pub fn $fnname(mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
+            let property = Property {
+                name:       String::from($name),
+                params:     params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value:  $tostring(value),
+                prop_group: None,
+            };
+
+            self.0.push(property);
+            self
+        }
+    };
+}
+
+impl EventBuilder {
+
+    /// Private function for adding event to calendar
+    fn into_component(self) -> Component {
+        self.0
+    }
+
+    /// Setter for "DTEND" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_dtend, "DTEND", Dtend, Dtend::into_raw);
+
+    /// Setter for "DTSTART" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_dtstart, "DTSTART", Dtstart, Dtstart::into_raw);
+
+    /// Setter for "DTSTAMP" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_dtstamp, "DTSTAMP", Dtstamp, Dtstamp::into_raw);
+
+    /// Setter for "UID" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_uid, "UID", Uid, Uid::into_raw);
+
+    /// Setter for "DESCRIPTION" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_description, "DESCRIPTION", Description, Description::into_raw);
+
+    /// Setter for "SUMMARY" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_summary, "SUMMARY", Summary, Summary::into_raw);
+
+    /// Setter for "URL" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_url, "URL", Url, Url::into_raw);
+
+    /// Setter for "LOCATION" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_location, "LOCATION", Location, Location::into_raw);
+
+    /// Setter for "CLASS" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_class, "CLASS", Class, Class::into_raw);
+
+    /// Setter for "CATEGORIES" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_categories, "CATEGORIES", Categories, Categories::into_raw);
+
+    /// Setter for "TRANSP" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_transp, "TRANSP", Transp, Transp::into_raw);
+
+    /// Setter for "RRULE" property
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is overridden. Old values are dropped silently:
+    make_setter_function_for!(set_rrule, "RRULE", Rrule, Rrule::into_raw);
+
+    //
+    // chainable builders
+    //
+
+    /// Chainable setter for "DTEND" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_dtend, "DTEND", Dtend, Dtend::into_raw);
+
+    /// Chainable setter for "DTSTART" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_dtstart, "DTSTART", Dtstart, Dtstart::into_raw);
+
+    /// Chainable setter for "DTSTAMP" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_dtstamp, "DTSTAMP", Dtstamp, Dtstamp::into_raw);
+
+    /// Chainable setter for "UID" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_uid, "UID", Uid, Uid::into_raw);
+
+    /// Chainable setter for "DESCRIPTION" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_description, "DESCRIPTION", Description, Description::into_raw);
+
+    /// Chainable setter for "SUMMARY" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_summary, "SUMMARY", Summary, Summary::into_raw);
+
+    /// Chainable setter for "URL" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_url, "URL", Url, Url::into_raw);
+
+    /// Chainable setter for "LOCATION" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_location, "LOCATION", Location, Location::into_raw);
+
+    /// Chainable setter for "CLASS" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_class, "CLASS", Class, Class::into_raw);
+
+    /// Chainable setter for "CATEGORIES" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_categories, "CATEGORIES", Categories, Categories::into_raw);
+
+    /// Chainable setter for "TRANSP" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_transp, "TRANSP", Transp, Transp::into_raw);
+
+    /// Chainable setter for "RRULE" property.
+    ///
+    /// # Notice
+    ///
+    /// Internally, the property is added, not overridden.
+    make_function_for!(with_rrule, "RRULE", Rrule, Rrule::into_raw);
+
+}
+
 #[cfg(all(test, feature = "timeconversions"))]
 mod tests {
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;
     use util::*;
+    use super::ICalendar;
 
     use super::*;
 
@@ -249,46 +486,46 @@ mod tests {
     #[test]
     fn test_icalendar_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
     }
 
     #[test]
     fn test_event_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
-        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
-        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
-        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
-        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
-        assert_eq!(ev.get_url()                                  , None);
-        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
-        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
-        assert_eq!(ev.get_categories()                           , None);
-        assert_eq!(ev.get_transp()                               , None);
-        assert_eq!(ev.get_rrule()                                , None);
+        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
+        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
+        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
+        assert_eq!(ev.url()                                  , None);
+        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
+        assert_eq!(ev.class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
+        assert_eq!(ev.categories()                           , None);
+        assert_eq!(ev.transp()                               , None);
+        assert_eq!(ev.rrule()                                , None);
     }
 
     #[test]
     fn test_event_attributes_oc() {
         let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
-        assert_eq!(ev.get_dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
-        assert_eq!(ev.get_uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
-        assert_eq!(ev.get_description().map(|e| e.raw().clone()) , Some("".to_owned()));
-        assert_eq!(ev.get_summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
-        assert_eq!(ev.get_url()                                  , None);
-        assert_eq!(ev.get_location().map(|e| e.raw().clone())    , Some("".to_owned()));
-        assert_eq!(ev.get_class().map(|e| e.raw().clone())       , None);
-        assert_eq!(ev.get_categories().map(|e| e.raw().clone())  , Some("".to_owned()));
-        assert_eq!(ev.get_transp()                               , None);
-        assert_eq!(ev.get_rrule()                                , None);
+        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
+        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
+        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
+        assert_eq!(ev.url()                                  , None);
+        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("".to_owned()));
+        assert_eq!(ev.class().map(|e| e.raw().clone())       , None);
+        assert_eq!(ev.categories().map(|e| e.raw().clone())  , Some("".to_owned()));
+        assert_eq!(ev.transp()                               , None);
+        assert_eq!(ev.rrule()                                , None);
     }
 
     #[cfg(feature = "timeconversions")]
@@ -296,21 +533,44 @@ mod tests {
     fn test_event_attributes_with_conversions() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
     }
 
     #[cfg(feature = "timeconversions")]
     #[test]
     fn test_event_attributes_oc_with_conversions() {
         let ical = ICalendar::build(TEST_ENTRY_OC).unwrap();
-        assert_eq!(ical.get_version().unwrap().raw(), "2.0");
-        assert_eq!(ical.get_prodid().unwrap().raw(), "ownCloud Calendar");
+        assert_eq!(ical.version().unwrap().raw(), "2.0");
+        assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.get_dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
-        assert_eq!(ev.get_dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
-        assert_eq!(ev.get_dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
+        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
+        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
+    }
+
+    #[test]
+    fn test_build_event() {
+        let mut ical = ICalendar::empty();
+        let mut builder = Event::build();
+
+        let desc = Description::new(String::from("test"), BTreeMap::new());
+        builder.set_description(desc, None);
+
+        let uid = Uid::new(String::from("testuid"), BTreeMap::new());
+        builder.set_uid(uid, None);
+
+        let summary = Summary::new(String::from("summary"), BTreeMap::new());
+        builder.set_summary(summary, None);
+
+        ical.add_event(builder);
+
+        let ev = ical.events().next().unwrap().unwrap();
+        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("testuid".to_owned()));
+        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("test".to_owned()));
+        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("summary".to_owned()));
+
     }
 
 }
