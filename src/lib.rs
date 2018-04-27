@@ -1,5 +1,3 @@
-// DOCS
-
 #[macro_use]
 extern crate error_chain;
 
@@ -24,3 +22,5 @@ pub use property::Property;
 pub use property::escape_chars;
 pub use property::unescape_chars;
 
+pub use vcard::Vcard;
+pub use icalendar::ICalendar;
