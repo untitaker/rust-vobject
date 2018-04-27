@@ -1,4 +1,3 @@
-#[macro_export]
 macro_rules! make_getter_function_for_optional {
     ($fnname:ident, $name:expr, $mapper:ty) => {
         pub fn $fnname(&self) -> Option<$mapper> {
@@ -7,7 +6,6 @@ macro_rules! make_getter_function_for_optional {
     }
 }
 
-#[macro_export]
 macro_rules! make_getter_function_for_values {
     ($fnname:ident, $name:expr, $mapper:ty) => {
         pub fn $fnname(&self) -> Vec<$mapper> {
@@ -21,7 +19,6 @@ macro_rules! make_getter_function_for_values {
     }
 }
 
-#[macro_export]
 macro_rules! create_data_type {
     ( $name:ident ) => {
         #[derive(Eq, PartialEq, Debug)]
