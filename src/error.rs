@@ -8,6 +8,9 @@ pub enum VObjectErrorKind {
 
     #[fail(display = "Not a Icalendar: {}", _0)]
     NotAnICalendar(String),
+
+    #[fail(display = "{}", _0)]
+    ChronoError(::chrono::format::ParseError),
 }
 
 pub type Result<T> = ::std::result::Result<T, VObjectErrorKind>;

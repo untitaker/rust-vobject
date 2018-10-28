@@ -171,7 +171,7 @@ impl AsDateTime for Dtend {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(Error::from),
+                .map_err(VObjectErrorKind::ChronoError),
         }
     }
 
@@ -185,7 +185,7 @@ impl AsDateTime for Dtstart {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(Error::from),
+                .map_err(VObjectErrorKind::ChronoError),
         }
     }
 
@@ -199,7 +199,7 @@ impl AsDateTime for Dtstamp {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(Error::from),
+                .map_err(VObjectErrorKind::ChronoError),
         }
     }
 
