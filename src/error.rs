@@ -9,3 +9,5 @@ pub enum VObjectErrorKind {
     #[fail(display = "Not a Icalendar: {}", _0)]
     NotAnICalendar(String),
 }
+
+pub type Result<T> = ::std::result::Result<T, VObjectErrorKind>;

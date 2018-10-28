@@ -1,9 +1,6 @@
 use std::result::Result as RResult;
 use std::collections::BTreeMap;
 
-use failure::Error;
-use failure::Fallible as Result;
-
 use component::Component;
 use component::parse_component;
 use property::Property;
@@ -28,8 +25,7 @@ impl ICalendar {
     ///
     pub fn build(s: &str) -> Result<ICalendar> {
         let c = parse_component(s)?;
-        Self::from_component(c)
-            .map_err(|_| Error::from(VObjectErrorKind::NotAnICalendar(s.to_owned())))
+        Self::from_component(c).map_err(|_| VObjectErrorKind::NotAnICalendar(s.to_owned()))
     }
 
     pub fn empty() -> ICalendar {

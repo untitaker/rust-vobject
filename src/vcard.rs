@@ -6,8 +6,6 @@ use component::parse_component;
 use property::Property;
 
 use std::result::Result as RResult;
-use failure::Fallible as Result;
-use failure::Error;
 use error::*;
 
 #[derive(Debug)]
@@ -27,7 +25,7 @@ impl Vcard {
     pub fn build(s: &str) -> Result<Vcard> {
         parse_component(s)
             .and_then(|c| {
-                Self::from_component(c).map_err(|_| Error::from(VObjectErrorKind::NotAVCard))
+                Self::from_component(c).map_err(|_| VObjectErrorKind::NotAVCard)
             })
     }
 
