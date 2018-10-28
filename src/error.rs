@@ -1,30 +1,16 @@
+#[derive(Debug, Clone, Eq, PartialEq, Fail)]
+pub enum VObjectErrorKind {
+    #[fail(display = "Parser error: {}", _0)]
+    ParserError(String),
 
-error_chain! {
+    #[fail(display = "Not a Vcard")]
+    NotAVCard,
 
-    types {
-        VObjectError, VObjectErrorKind, ResultExt, Result;
-    }
+    #[fail(display = "Not a Icalendar: {}", _0)]
+    NotAnICalendar(String),
 
-    foreign_links {
-        ChronoParseError(::chrono::format::ParseError) #[cfg(feature = "timeconversions")];
-    }
-
-    errors {
-        ParserError(desc: String) {
-            description("Parser error")
-            display("{}", desc)
-        }
-
-        NotAVCard {
-            description("Input is not a valid VCard")
-            display("Passed content string is not a VCard")
-        }
-
-        NotAnICalendar(content: String) {
-            description("Input is not a valid ICalendar")
-            display("Not an ICalendar: '{}'", content)
-        }
-    }
-
-
+    #[fail(display = "{}", _0)]
+    ChronoError(::chrono::format::ParseError),
 }
+
+pub type Result<T> = ::std::result::Result<T, VObjectErrorKind>;

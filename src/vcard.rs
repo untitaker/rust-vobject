@@ -25,11 +25,7 @@ impl Vcard {
     pub fn build(s: &str) -> Result<Vcard> {
         parse_component(s)
             .and_then(|c| {
-                Self::from_component(c)
-                    .map_err(|_| {
-                        let kind = VObjectErrorKind::NotAVCard;
-                        VObjectError::from_kind(kind)
-                    })
+                Self::from_component(c).map_err(|_| VObjectErrorKind::NotAVCard)
             })
     }
 
