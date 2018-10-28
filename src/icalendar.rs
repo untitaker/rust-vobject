@@ -1,6 +1,9 @@
 use std::result::Result as RResult;
 use std::collections::BTreeMap;
 
+use failure::Error;
+use failure::Fallible as Result;
+
 use component::Component;
 use component::parse_component;
 use property::Property;
@@ -26,10 +29,7 @@ impl ICalendar {
     pub fn build(s: &str) -> Result<ICalendar> {
         let c = parse_component(s)?;
         Self::from_component(c)
-            .map_err(|_| {
-                let kind = VObjectErrorKind::NotAnICalendar(s.to_owned());
-                VObjectError::from_kind(kind)
-            })
+            .map_err(|_| Error::from(VObjectErrorKind::NotAnICalendar(s.to_owned())))
     }
 
     pub fn empty() -> ICalendar {
@@ -175,7 +175,7 @@ impl AsDateTime for Dtend {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(From::from),
+                .map_err(Error::from),
         }
     }
 
@@ -189,7 +189,7 @@ impl AsDateTime for Dtstart {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(From::from),
+                .map_err(Error::from),
         }
     }
 
@@ -203,7 +203,7 @@ impl AsDateTime for Dtstamp {
             Ok(dt) => Ok(Time::DateTime(dt)),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
                 .map(Time::Date)
-                .map_err(From::from),
+                .map_err(Error::from),
         }
     }
 

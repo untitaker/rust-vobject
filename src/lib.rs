@@ -1,5 +1,5 @@
 #[macro_use]
-extern crate error_chain;
+extern crate failure;
 
 #[cfg(feature = "timeconversions")]
 extern crate chrono;

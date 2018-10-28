@@ -3,7 +3,11 @@ use std::collections::BTreeMap;
 
 use property::Property;
 use parser::Parser;
+use failure::Fallible as Result;
+use failure::Error;
+
 use error::*;
+
 
 #[derive(Clone, Debug)]
 pub struct Component {
@@ -68,7 +72,7 @@ impl Component {
 }
 
 impl FromStr for Component {
-    type Err = VObjectError;
+    type Err = Error;
 
     /// Same as `vobject::parse_component`
     fn from_str(s: &str) -> Result<Component> {
@@ -82,7 +86,7 @@ pub fn parse_component(s: &str) -> Result<Component> {
     if !new_s.is_empty() {
         let s = format!("Trailing data: `{}`", new_s);
         let kind = VObjectErrorKind::ParserError(s);
-        return Err(VObjectError::from_kind(kind));
+        return Err(Error::from(kind));
     }
 
     Ok(rv)

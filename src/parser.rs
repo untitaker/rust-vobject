@@ -1,5 +1,8 @@
 use std::collections::BTreeMap;
 
+use failure::Fallible as Result;
+use failure::Error;
+
 use component::Component;
 use property::Property;
 use error::*;
@@ -60,13 +63,13 @@ impl<'s> Parser<'s> {
             Some((x, _)) => x,
             None => {
                 let kind = VObjectErrorKind::ParserError(format!("Expected {}, found EOL", c));
-                return Err(VObjectError::from_kind(kind))
+                return Err(Error::from(kind))
            }
         };
 
         if real_c != c {
             let kind = VObjectErrorKind::ParserError(format!("Expected {}, found {}", c, real_c));
-            return Err(VObjectError::from_kind(kind))
+            return Err(Error::from(kind))
         };
 
         Ok(())
@@ -105,7 +108,7 @@ impl<'s> Parser<'s> {
         } else {
             self.pos = start_pos;
             let kind = VObjectErrorKind::ParserError("Expected EOL.".to_owned());
-            Err(VObjectError::from_kind(kind))
+            Err(Error::from(kind))
         }
     }
 
@@ -175,7 +178,7 @@ impl<'s> Parser<'s> {
         let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
         if rv.is_empty() {
             let kind = VObjectErrorKind::ParserError("No property name found.".to_owned());
-            Err(VObjectError::from_kind(kind))
+            Err(Error::from(kind))
         } else {
             Ok(rv)
         }
@@ -211,7 +214,7 @@ impl<'s> Parser<'s> {
             Ok(x) => Ok(x),
             Err(e) => {
                 let kind = VObjectErrorKind::ParserError(format!("No param name found: {}", e));
-                Err(VObjectError::from_kind(kind))
+                Err(Error::from(kind))
             }
         }
     }
@@ -267,7 +270,7 @@ impl<'s> Parser<'s> {
         if property.name != "BEGIN" {
             self.pos = start_pos;
             let kind = VObjectErrorKind::ParserError("Expected BEGIN tag.".to_owned());
-            return Err(VObjectError::from_kind(kind));
+            return Err(Error::from(kind));
         };
 
         // Create a component with the name of the BEGIN tag's value
@@ -286,7 +289,7 @@ impl<'s> Parser<'s> {
                                     component.name,
                                     property.raw_value);
                     let kind = VObjectErrorKind::ParserError(s);
-                    return Err(VObjectError::from_kind(kind));
+                    return Err(Error::from(kind));
                 }
 
                 break;
