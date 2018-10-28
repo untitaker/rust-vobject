@@ -362,6 +362,7 @@ mod tests {
         // Test for infinite loops as well
         use std::sync::mpsc::{channel, RecvTimeoutError};
         use std::time::Duration;
+        use error::VObjectErrorKind;
         let mut p = Parser {input: "BEGIN:a\nBEGIN:b\nEND:a", pos: 0};
 
         let (tx, rx) = channel();
@@ -369,7 +370,12 @@ mod tests {
 
         match rx.recv_timeout(Duration::from_millis(50)) {
             Err(RecvTimeoutError::Timeout) => assert!(false),
-            Ok(Err(VObjectError(VObjectErrorKind::ParserError{..}, _ ))) => assert!(true),
+            Ok(Err(e)) => {
+                match e.downcast_ref::<VObjectErrorKind>() {
+                    Some(VObjectErrorKind::ParserError { .. }) => assert!(true),
+                    _ => assert!(false),
+                }
+            },
             _ => assert!(false),
         }
     }
