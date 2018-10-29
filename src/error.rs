@@ -9,6 +9,7 @@ pub enum VObjectErrorKind {
     #[fail(display = "Not a Icalendar: {}", _0)]
     NotAnICalendar(String),
 
+    #[cfg(feature = "timeconversions")]
     #[fail(display = "{}", _0)]
     ChronoError(::chrono::format::ParseError),
 }
