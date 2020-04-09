@@ -17,8 +17,11 @@ pub enum VObjectErrorKind {
     NotAnICalendar(String),
 
     #[cfg(feature = "timeconversions")]
-    #[error("{}", _0)]
-    ChronoError(::chrono::format::ParseError),
+    #[error("failed to parse time")]
+    ChronoError {
+        #[from]
+        source: chrono::format::ParseError,
+    },
 }
 
 pub(crate) type VObjectResult<T> = Result<T, VObjectErrorKind>;

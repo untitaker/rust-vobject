@@ -166,12 +166,11 @@ pub trait AsDateTime {
 impl AsDateTime for Dtend {
 
     fn as_datetime(&self) -> VObjectResult<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }
@@ -180,12 +179,11 @@ impl AsDateTime for Dtend {
 impl AsDateTime for Dtstart {
 
     fn as_datetime(&self) -> VObjectResult<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }
@@ -194,12 +192,11 @@ impl AsDateTime for Dtstart {
 impl AsDateTime for Dtstamp {
 
     fn as_datetime(&self) -> VObjectResult<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }
