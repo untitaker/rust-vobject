@@ -31,7 +31,7 @@ impl Vcard {
 
     /// Helper for `VcardBuilder::new()`
     pub fn builder() -> VcardBuilder {
-        VcardBuilder::new()
+        VcardBuilder::default()
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
@@ -95,6 +95,7 @@ impl Deref for Vcard {
 }
 
 /// A builder for building a Vcard object.
+#[derive(Default)]
 pub struct VcardBuilder {
     properties: BTreeMap<String, Vec<Property>>
 }
@@ -148,12 +149,6 @@ macro_rules! make_builder_fn {
 }
 
 impl VcardBuilder {
-    pub fn new() -> Self {
-        VcardBuilder {
-            properties: BTreeMap::new(),
-        }
-    }
-
     pub fn build(self) -> VObjectResult<Vcard> {
         let mut v = Vcard::default();
         v.set_properties(self.properties);
