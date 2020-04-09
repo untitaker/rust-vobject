@@ -69,7 +69,7 @@ impl Component {
 }
 
 impl FromStr for Component {
-    type Err = VObjectErrorKind;
+    type Err = VObjectError;
 
     /// Same as `vobject::parse_component`
     fn from_str(s: &str) -> VObjectResult<Component> {

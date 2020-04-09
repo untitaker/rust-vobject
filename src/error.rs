@@ -3,7 +3,7 @@ use thiserror::Error;
 use ::parser::ParseErrorReason;
 
 #[derive(Debug, Clone, Error)]
-pub enum VObjectErrorKind {
+pub enum VObjectError {
     #[error("failed to parse: {}", source)]
     Parse {
         #[from]
@@ -24,4 +24,4 @@ pub enum VObjectErrorKind {
     },
 }
 
-pub(crate) type VObjectResult<T> = Result<T, VObjectErrorKind>;
+pub(crate) type VObjectResult<T> = Result<T, VObjectError>;
