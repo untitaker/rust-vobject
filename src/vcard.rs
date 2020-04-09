@@ -254,23 +254,23 @@ impl Name {
     }
 
     pub fn surname(&self) -> Option<String> {
-        self.0.split(";").nth(0).map(String::from)
+        self.0.split(';').nth(0).map(String::from)
     }
 
     pub fn given_name(&self) -> Option<String> {
-        self.0.split(";").nth(1).map(String::from)
+        self.0.split(';').nth(1).map(String::from)
     }
 
     pub fn additional_names(&self) -> Option<String> {
-        self.0.split(";").nth(2).map(String::from)
+        self.0.split(';').nth(2).map(String::from)
     }
 
     pub fn honorific_prefixes(&self) -> Option<String> {
-        self.0.split(";").nth(3).map(String::from)
+        self.0.split(';').nth(3).map(String::from)
     }
 
     pub fn honorific_suffixes(&self) -> Option<String> {
-        self.0.split(";").nth(4).map(String::from)
+        self.0.split(';').nth(4).map(String::from)
     }
 
     /// Alias for Name::surname()
