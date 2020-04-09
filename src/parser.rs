@@ -108,7 +108,7 @@ impl<'s> Parser<'s> {
 
     fn sloppy_terminate_line(&mut self) -> Result<()> {
         if !self.eof() {
-            try!(self.consume_eol());
+            self.consume_eol()?;
             while let Ok(_) = self.consume_eol() {}
         };
 
@@ -152,13 +152,13 @@ impl<'s> Parser<'s> {
 
     pub fn consume_property(&mut self) -> Result<Property> {
         let group = self.consume_property_group().ok();
-        let name = try!(self.consume_property_name());
+        let name = self.consume_property_name()?;
         let params = self.consume_params();
 
-        try!(self.assert_char(':'));
+        self.assert_char(':')?;
         self.consume_char();
 
-        let value = try!(self.consume_property_value());
+        let value = self.consume_property_value()?;
 
         Ok(Property {
             name: name,
@@ -198,7 +198,7 @@ impl<'s> Parser<'s> {
 
     fn consume_property_value(&mut self) -> Result<String> {
         let rv = self.consume_while(|x| x != '\r' && x != '\n');
-        try!(self.sloppy_terminate_line());
+        self.sloppy_terminate_line()?;
         Ok(rv)
     }
 
@@ -218,7 +218,7 @@ impl<'s> Parser<'s> {
 
         if self.consume_only_char('"') {
             let rv = self.consume_while(qsafe);
-            try!(self.assert_char('"'));
+            self.assert_char('"')?;
             self.consume_char();
             Ok(rv)
         } else {
@@ -227,7 +227,7 @@ impl<'s> Parser<'s> {
     }
 
     fn consume_param(&mut self) -> Result<(String, String)> {
-        let name = try!(self.consume_param_name());
+        let name = self.consume_param_name()?;
         let start_pos = self.pos;
         let value = if self.consume_only_char('=') {
             match self.consume_param_value() {
@@ -254,7 +254,7 @@ impl<'s> Parser<'s> {
 
     pub fn consume_component(&mut self) -> Result<Component> {
         let start_pos = self.pos;
-        let mut property = try!(self.consume_property());
+        let mut property = self.consume_property()?;
         if property.name != "BEGIN" {
             self.pos = start_pos;
             return Err(VObjectErrorKind::ParserError("Expected BEGIN tag.".to_owned()));
@@ -265,10 +265,10 @@ impl<'s> Parser<'s> {
 
         loop {
             let previous_pos = self.pos;
-            property = try!(self.consume_property());
+            property = self.consume_property()?;
             if property.name == "BEGIN" {
                 self.pos = previous_pos;
-                component.subcomponents.push(try!(self.consume_component()));
+                component.subcomponents.push(self.consume_component()?);
             } else if property.name == "END" {
                 if property.raw_value != component.name {
                     self.pos = start_pos;
