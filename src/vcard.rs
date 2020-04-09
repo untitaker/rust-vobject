@@ -255,7 +255,7 @@ impl Name {
     }
 
     pub fn surname(&self) -> Option<String> {
-        self.0.split(';').nth(0).map(String::from)
+        self.0.split(';').next().map(String::from)
     }
 
     pub fn given_name(&self) -> Option<String> {
