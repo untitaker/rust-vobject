@@ -126,7 +126,7 @@ impl<'s> Parser<'s> {
             Ok(())
         } else {
             self.pos = start_pos;
-            return Err(ParseErrorReason::ExpectedEol)
+            Err(ParseErrorReason::ExpectedEol)
         }
     }
 
