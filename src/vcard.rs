@@ -105,6 +105,7 @@ macro_rules! make_builder_fn {
         fn $fnname:ident building $property_name:tt with_params,
         $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
     ) => {
+        #[allow(clippy::too_many_arguments)]
         pub fn $fnname(mut self, params: $crate::param::Parameters, $( $arg_name : $arg_type ),*) -> Self {
             let raw_value = vec![ $( $arg_name ),* ]
                 .into_iter()
