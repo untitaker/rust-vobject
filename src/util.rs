@@ -55,8 +55,8 @@ macro_rules! create_data_type {
 }
 
 #[cfg(feature = "timeconversions")]
-pub const DATE_TIME_FMT : &'static str = "%Y%m%dT%H%M%SZ";
+pub const DATE_TIME_FMT : &str = "%Y%m%dT%H%M%SZ";
 
 #[cfg(feature = "timeconversions")]
-pub const DATE_FMT      : &'static str = "%Y%m%d";
+pub const DATE_FMT      : &str = "%Y%m%d";
 

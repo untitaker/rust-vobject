@@ -425,7 +425,7 @@ mod tests {
 
     use super::*;
 
-    const TEST_ENTRY : &'static str =
+    const TEST_ENTRY : &str =
             "BEGIN:VCALENDAR\n\
             VERSION:2.0\n\
             PRODID:http://www.example.com/calendarapplication/\n\
@@ -443,7 +443,7 @@ mod tests {
             END:VEVENT\n\
             END:VCALENDAR\n";
 
-    const TEST_ENTRY_OC : &'static str = // Lets see how owncloud foo works here
+    const TEST_ENTRY_OC : &str = // Lets see how owncloud foo works here
         "BEGIN:VCALENDAR\n\
         VERSION:2.0\n\
         PRODID:ownCloud Calendar\n\

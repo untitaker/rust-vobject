@@ -47,7 +47,7 @@ impl Component {
 
     /// Retrieve properties by key. Returns an empty slice if key doesn't exist.
     pub fn get_all<P: AsRef<str>>(&self, name: P) -> &[Property] {
-        static EMPTY: &'static [Property] = &[];
+        static EMPTY: &[Property] = &[];
         match self.props.get(name.as_ref()) {
             Some(values) => &values[..],
             None => EMPTY
