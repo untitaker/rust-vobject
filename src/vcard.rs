@@ -91,6 +91,7 @@ impl Deref for Vcard {
 }
 
 /// A builder for building a Vcard object.
+#[derive(Default)]
 pub struct VcardBuilder {
     properties: BTreeMap<String, Vec<Property>>,
 }
@@ -144,17 +145,9 @@ macro_rules! make_builder_fn {
     }
 }
 
-impl Default for VcardBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl VcardBuilder {
     pub fn new() -> Self {
-        VcardBuilder {
-            properties: BTreeMap::new(),
-        }
+        Self::default()
     }
 
     pub fn build(self) -> VObjectResult<Vcard> {
