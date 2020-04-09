@@ -78,7 +78,7 @@ impl ICalendar {
     ///     .collect::<Vec<Event>>();
     /// ```
     ///
-    pub fn events<'a>(&'a self) -> EventIterator<'a> {
+    pub fn events(&self) -> EventIterator {
         EventIterator::new(self.0.subcomponents.iter())
     }
 
