@@ -161,7 +161,7 @@ impl VcardBuilder {
     }
 
     make_builder_fn!(fn with_adr building "ADR" with_params,
-                     |o| o.unwrap_or(String::from("")) =>
+                     |o| o.unwrap_or_else(String::new) =>
                      pobox    : Option<String>,
                      ext      : Option<String>,
                      street   : Option<String>,
@@ -185,7 +185,7 @@ impl VcardBuilder {
     make_builder_fn!(fn with_member       building "MEMBER"             , |o| o => uri: String);
 
     make_builder_fn!(fn with_name building "N" with_params,
-                     |o| o.unwrap_or(String::from("")) =>
+                     |o| o.unwrap_or_else(String::new) =>
                      surname            : Option<String>,
                      given_name         : Option<String>,
                      additional_name    : Option<String>,
