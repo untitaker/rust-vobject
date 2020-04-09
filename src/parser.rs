@@ -375,17 +375,17 @@ mod tests {
         ::std::thread::spawn(move|| { tx.send(p.consume_component()) });
 
         match rx.recv_timeout(Duration::from_millis(50)) {
-            Err(RecvTimeoutError::Timeout) => assert!(false),
+            Err(RecvTimeoutError::Timeout) => panic!("unexpected timeout"),
             Ok(Err(e)) => {
                 match e {
                     ParseErrorReason::MismatchedTag(begin, end) => {
                         assert_eq!(begin, "b");
                         assert_eq!(end, "a");
                     },
-                    _ => assert!(false),
+                    r => panic!("unexpected reason: {}", r),
                 }
             },
-            _ => assert!(false),
+            r => panic!("unexpected error: {:?}", r),
         }
     }
 
