@@ -14,4 +14,4 @@ pub enum VObjectErrorKind {
     ChronoError(::chrono::format::ParseError),
 }
 
-pub type Result<T> = ::std::result::Result<T, VObjectErrorKind>;
+pub(crate) type VObjectResult<T> = Result<T, VObjectErrorKind>;

@@ -72,13 +72,13 @@ impl FromStr for Component {
     type Err = VObjectErrorKind;
 
     /// Same as `vobject::parse_component`
-    fn from_str(s: &str) -> Result<Component> {
+    fn from_str(s: &str) -> VObjectResult<Component> {
         parse_component(s)
     }
 }
 
 /// Parse exactly one component. Trailing data generates errors.
-pub fn parse_component(s: &str) -> Result<Component> {
+pub fn parse_component(s: &str) -> VObjectResult<Component> {
     let (rv, new_s) = read_component(s)?;
     if !new_s.is_empty() {
         let s = format!("Trailing data: `{}`", new_s);
@@ -89,7 +89,7 @@ pub fn parse_component(s: &str) -> Result<Component> {
 }
 
 /// Parse one component and return the rest of the string.
-pub fn read_component(s: &str) -> Result<(Component, &str)> {
+pub fn read_component(s: &str) -> VObjectResult<(Component, &str)> {
     let mut parser = Parser::new(s);
     let rv = parser.consume_component()?;
     let new_s = if parser.eof() {

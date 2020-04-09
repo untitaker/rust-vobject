@@ -55,7 +55,7 @@ impl<'s> Parser<'s> {
         self.pos >= self.input.len()
     }
 
-    fn assert_char(&self, c: char) -> Result<()> {
+    fn assert_char(&self, c: char) -> VObjectResult<()> {
         let real_c = match self.peek() {
             Some((x, _)) => x,
             None => {
@@ -86,7 +86,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_eol(&mut self) -> Result<()> {
+    fn consume_eol(&mut self) -> VObjectResult<()> {
         let start_pos = self.pos;
 
         let consumed = match self.consume_char() {
@@ -106,7 +106,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn sloppy_terminate_line(&mut self) -> Result<()> {
+    fn sloppy_terminate_line(&mut self) -> VObjectResult<()> {
         if !self.eof() {
             self.consume_eol()?;
             while let Ok(_) = self.consume_eol() {}
@@ -150,7 +150,7 @@ impl<'s> Parser<'s> {
         res
     }
 
-    pub fn consume_property(&mut self) -> Result<Property> {
+    pub fn consume_property(&mut self) -> VObjectResult<Property> {
         let group = self.consume_property_group().ok();
         let name = self.consume_property_name()?;
         let params = self.consume_params();
@@ -168,7 +168,7 @@ impl<'s> Parser<'s> {
         })
     }
 
-    fn consume_property_name(&mut self) -> Result<String> {
+    fn consume_property_name(&mut self) -> VObjectResult<String> {
         let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
         if rv.is_empty() {
             Err(VObjectErrorKind::ParserError("No property name found.".to_owned()))
@@ -177,7 +177,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_property_group(&mut self) -> Result<String> {
+    fn consume_property_group(&mut self) -> VObjectResult<String> {
         let start_pos = self.pos;
         let name = self.consume_property_name();
 
@@ -196,18 +196,18 @@ impl<'s> Parser<'s> {
         e
     }
 
-    fn consume_property_value(&mut self) -> Result<String> {
+    fn consume_property_value(&mut self) -> VObjectResult<String> {
         let rv = self.consume_while(|x| x != '\r' && x != '\n');
         self.sloppy_terminate_line()?;
         Ok(rv)
     }
 
-    fn consume_param_name(&mut self) -> Result<String> {
+    fn consume_param_name(&mut self) -> VObjectResult<String> {
         self.consume_property_name()
             .map_err(|e| VObjectErrorKind::ParserError(format!("No param name found: {}", e)))
     }
 
-    fn consume_param_value(&mut self) -> Result<String> {
+    fn consume_param_value(&mut self) -> VObjectResult<String> {
         let qsafe = |x| {
             x != '"' &&
             x != '\r' &&
@@ -226,7 +226,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_param(&mut self) -> Result<(String, String)> {
+    fn consume_param(&mut self) -> VObjectResult<(String, String)> {
         let name = self.consume_param_name()?;
         let start_pos = self.pos;
         let value = if self.consume_only_char('=') {
@@ -252,7 +252,7 @@ impl<'s> Parser<'s> {
         rv
     }
 
-    pub fn consume_component(&mut self) -> Result<Component> {
+    pub fn consume_component(&mut self) -> VObjectResult<Component> {
         let start_pos = self.pos;
         let mut property = self.consume_property()?;
         if property.name != "BEGIN" {
