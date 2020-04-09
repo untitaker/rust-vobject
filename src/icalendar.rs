@@ -1,4 +1,3 @@
-use std::result::Result as RResult;
 use std::collections::BTreeMap;
 
 use component::Component;
@@ -23,9 +22,9 @@ impl ICalendar {
     /// Returns an error if the parsed text is not a ICalendar (that means that an error is
     /// returned also if this is a valid Vcard!)
     ///
-    pub fn build(s: &str) -> Result<ICalendar> {
+    pub fn build(s: &str) -> VObjectResult<ICalendar> {
         let c = parse_component(s)?;
-        Self::from_component(c).map_err(|_| VObjectErrorKind::NotAnICalendar(s.to_owned()))
+        Self::from_component(c).map_err(|_| VObjectError::NotAnICalendar(s.to_owned()))
     }
 
     pub fn empty() -> ICalendar {
@@ -45,7 +44,7 @@ impl ICalendar {
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
-    pub fn from_component(c: Component)-> RResult<ICalendar, Component> {
+    pub fn from_component(c: Component)-> Result<ICalendar, Component> {
         if c.name == "VCALENDAR" {
             Ok(ICalendar(c))
         } else {
@@ -99,7 +98,7 @@ impl<'a> EventIterator<'a> {
 }
 
 impl<'a> Iterator for EventIterator<'a> {
-    type Item = RResult<Event<'a>, &'a Component>;
+    type Item = Result<Event<'a>, &'a Component>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(Event::from_component)
@@ -111,7 +110,7 @@ impl<'a> Iterator for EventIterator<'a> {
 pub struct Event<'a>(&'a Component);
 
 impl<'a> Event<'a> {
-    fn from_component(c: &'a Component) -> RResult<Event<'a>, &'a Component> {
+    fn from_component(c: &'a Component) -> Result<Event<'a>, &'a Component> {
         if c.name == "VEVENT" {
             Ok(Event(c))
         } else {
@@ -160,19 +159,18 @@ pub enum Time {
 
 #[cfg(feature = "timeconversions")]
 pub trait AsDateTime {
-    fn as_datetime(&self) -> Result<Time>;
+    fn as_datetime(&self) -> VObjectResult<Time>;
 }
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtend {
 
-    fn as_datetime(&self) -> Result<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+    fn as_datetime(&self) -> VObjectResult<Time> {
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }
@@ -180,13 +178,12 @@ impl AsDateTime for Dtend {
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstart {
 
-    fn as_datetime(&self) -> Result<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+    fn as_datetime(&self) -> VObjectResult<Time> {
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }
@@ -194,13 +191,12 @@ impl AsDateTime for Dtstart {
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstamp {
 
-    fn as_datetime(&self) -> Result<Time> {
-        match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Ok(Time::DateTime(dt)),
+    fn as_datetime(&self) -> VObjectResult<Time> {
+        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+            Ok(dt) => Time::DateTime(dt),
             Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)
-                .map_err(VObjectErrorKind::ChronoError),
-        }
+                .map(Time::Date)?,
+        })
     }
 
 }

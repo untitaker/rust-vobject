@@ -1,17 +1,27 @@
-#[derive(Debug, Clone, Eq, PartialEq, Fail)]
-pub enum VObjectErrorKind {
-    #[fail(display = "Parser error: {}", _0)]
-    ParserError(String),
+use thiserror::Error;
 
-    #[fail(display = "Not a Vcard")]
+use ::parser::ParseErrorReason;
+
+#[derive(Debug, Clone, Error)]
+pub enum VObjectError {
+    #[error("failed to parse: {}", source)]
+    Parse {
+        #[from]
+        source: ParseErrorReason,
+    },
+
+    #[error("Not a Vcard")]
     NotAVCard,
 
-    #[fail(display = "Not a Icalendar: {}", _0)]
+    #[error("Not a Icalendar: {}", _0)]
     NotAnICalendar(String),
 
     #[cfg(feature = "timeconversions")]
-    #[fail(display = "{}", _0)]
-    ChronoError(::chrono::format::ParseError),
+    #[error("failed to parse time")]
+    ChronoError {
+        #[from]
+        source: chrono::format::ParseError,
+    },
 }
 
-pub type Result<T> = ::std::result::Result<T, VObjectErrorKind>;
+pub(crate) type VObjectResult<T> = Result<T, VObjectError>;

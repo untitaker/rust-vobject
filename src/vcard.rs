@@ -22,10 +22,10 @@ impl Vcard {
     /// Returns an error if the parsed text is not a Vcard (that means that an error is returned
     /// also if this is a valid icalendar!)
     ///
-    pub fn build(s: &str) -> Result<Vcard> {
+    pub fn build(s: &str) -> VObjectResult<Vcard> {
         parse_component(s)
             .and_then(|c| {
-                Self::from_component(c).map_err(|_| VObjectErrorKind::NotAVCard)
+                Self::from_component(c).map_err(|_| VObjectError::NotAVCard)
             })
     }
 
@@ -154,7 +154,7 @@ impl VcardBuilder {
         }
     }
 
-    pub fn build(self) -> Result<Vcard> {
+    pub fn build(self) -> VObjectResult<Vcard> {
         let mut v = Vcard::default();
         v.set_properties(self.properties);
         Ok(v)

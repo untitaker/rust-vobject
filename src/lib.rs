@@ -1,8 +1,7 @@
-#[macro_use]
-extern crate failure;
-
 #[cfg(feature = "timeconversions")]
 extern crate chrono;
+
+extern crate thiserror;
 
 #[macro_use] pub mod param;
 #[macro_use] mod util;
