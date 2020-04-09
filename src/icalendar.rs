@@ -43,7 +43,8 @@ impl ICalendar {
         self
     }
 
-    /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
+    /// Wrap a Component into an ICalendar object, or don't do it if the Component is not an
+    /// ICalendar.
     pub fn from_component(c: Component)-> Result<ICalendar, Component> {
         if c.name == "VCALENDAR" {
             Ok(ICalendar(c))
