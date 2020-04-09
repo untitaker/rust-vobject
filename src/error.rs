@@ -1,9 +1,14 @@
 use thiserror::Error;
 
+use ::parser::ParseErrorReason;
+
 #[derive(Debug, Clone, Error)]
 pub enum VObjectErrorKind {
-    #[error("Parser error: {}", _0)]
-    ParserError(String),
+    #[error("failed to parse: {}", source)]
+    Parse {
+        #[from]
+        source: ParseErrorReason,
+    },
 
     #[error("Not a Vcard")]
     NotAVCard,

@@ -2,7 +2,7 @@ use std::str::FromStr;
 use std::collections::BTreeMap;
 
 use property::Property;
-use parser::Parser;
+use parser::{Parser, ParseErrorReason};
 
 use error::*;
 
@@ -81,8 +81,7 @@ impl FromStr for Component {
 pub fn parse_component(s: &str) -> VObjectResult<Component> {
     let (rv, new_s) = read_component(s)?;
     if !new_s.is_empty() {
-        let s = format!("Trailing data: `{}`", new_s);
-        return Err(VObjectErrorKind::ParserError(s));
+        return Err(ParseErrorReason::TrailingData(new_s.into()).into());
     }
 
     Ok(rv)

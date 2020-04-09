@@ -1,8 +1,32 @@
 use std::collections::BTreeMap;
+use std::fmt;
+
+use thiserror::Error;
 
 use component::Component;
 use property::Property;
-use error::*;
+
+#[derive(Debug, Clone, Error)]
+pub enum ParseErrorReason {
+    #[error("trailing data: {}", _0)]
+    TrailingData(String),
+    #[error("expected {}, found EOL", _0)]
+    UnexpectedEol(char),
+    #[error("expected {}, found {}", _0, _1)]
+    UnexpectedChar(char, char),
+    #[error("expected EOL")]
+    ExpectedEol,
+    #[error("no property name found")]
+    NoPropertyName,
+    #[error("no parameter name found")]
+    NoParameterName,
+    #[error("expected BEGIN tag")]
+    ExpectedBegin,
+    #[error("mismatched tags: BEGIN:{} vs END:{}", _0, _1)]
+    MismatchedTag(String, String),
+}
+
+type ParseResult<T> = Result<T, ParseErrorReason>;
 
 pub struct Parser<'s> {
     pub input: &'s str,
@@ -55,16 +79,16 @@ impl<'s> Parser<'s> {
         self.pos >= self.input.len()
     }
 
-    fn assert_char(&self, c: char) -> VObjectResult<()> {
+    fn assert_char(&self, c: char) -> ParseResult<()> {
         let real_c = match self.peek() {
             Some((x, _)) => x,
             None => {
-                return Err(VObjectErrorKind::ParserError(format!("Expected {}, found EOL", c)))
+                return Err(ParseErrorReason::UnexpectedEol(c))
            }
         };
 
         if real_c != c {
-            return Err(VObjectErrorKind::ParserError(format!("Expected {}, found {}", c, real_c)))
+            return Err(ParseErrorReason::UnexpectedChar(c, real_c))
         };
 
         Ok(())
@@ -86,7 +110,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_eol(&mut self) -> VObjectResult<()> {
+    fn consume_eol(&mut self) -> ParseResult<()> {
         let start_pos = self.pos;
 
         let consumed = match self.consume_char() {
@@ -102,11 +126,11 @@ impl<'s> Parser<'s> {
             Ok(())
         } else {
             self.pos = start_pos;
-            return Err(VObjectErrorKind::ParserError("Expected EOL.".to_owned()))
+            return Err(ParseErrorReason::ExpectedEol)
         }
     }
 
-    fn sloppy_terminate_line(&mut self) -> VObjectResult<()> {
+    fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
         if !self.eof() {
             self.consume_eol()?;
             while let Ok(_) = self.consume_eol() {}
@@ -150,7 +174,7 @@ impl<'s> Parser<'s> {
         res
     }
 
-    pub fn consume_property(&mut self) -> VObjectResult<Property> {
+    pub fn consume_property(&mut self) -> ParseResult<Property> {
         let group = self.consume_property_group().ok();
         let name = self.consume_property_name()?;
         let params = self.consume_params();
@@ -168,16 +192,16 @@ impl<'s> Parser<'s> {
         })
     }
 
-    fn consume_property_name(&mut self) -> VObjectResult<String> {
+    fn consume_property_name(&mut self) -> ParseResult<String> {
         let rv = self.consume_while(|x| x == '-' || x.is_alphanumeric());
         if rv.is_empty() {
-            Err(VObjectErrorKind::ParserError("No property name found.".to_owned()))
+            Err(ParseErrorReason::NoPropertyName)
         } else {
             Ok(rv)
         }
     }
 
-    fn consume_property_group(&mut self) -> VObjectResult<String> {
+    fn consume_property_group(&mut self) -> ParseResult<String> {
         let start_pos = self.pos;
         let name = self.consume_property_name();
 
@@ -196,18 +220,18 @@ impl<'s> Parser<'s> {
         e
     }
 
-    fn consume_property_value(&mut self) -> VObjectResult<String> {
+    fn consume_property_value(&mut self) -> ParseResult<String> {
         let rv = self.consume_while(|x| x != '\r' && x != '\n');
         self.sloppy_terminate_line()?;
         Ok(rv)
     }
 
-    fn consume_param_name(&mut self) -> VObjectResult<String> {
+    fn consume_param_name(&mut self) -> ParseResult<String> {
         self.consume_property_name()
-            .map_err(|e| VObjectErrorKind::ParserError(format!("No param name found: {}", e)))
+            .map_err(|_| ParseErrorReason::NoParameterName)
     }
 
-    fn consume_param_value(&mut self) -> VObjectResult<String> {
+    fn consume_param_value(&mut self) -> ParseResult<String> {
         let qsafe = |x| {
             x != '"' &&
             x != '\r' &&
@@ -226,7 +250,7 @@ impl<'s> Parser<'s> {
         }
     }
 
-    fn consume_param(&mut self) -> VObjectResult<(String, String)> {
+    fn consume_param(&mut self) -> ParseResult<(String, String)> {
         let name = self.consume_param_name()?;
         let start_pos = self.pos;
         let value = if self.consume_only_char('=') {
@@ -252,12 +276,12 @@ impl<'s> Parser<'s> {
         rv
     }
 
-    pub fn consume_component(&mut self) -> VObjectResult<Component> {
+    pub fn consume_component(&mut self) -> ParseResult<Component> {
         let start_pos = self.pos;
         let mut property = self.consume_property()?;
         if property.name != "BEGIN" {
             self.pos = start_pos;
-            return Err(VObjectErrorKind::ParserError("Expected BEGIN tag.".to_owned()));
+            return Err(ParseErrorReason::ExpectedBegin);
         };
 
         // Create a component with the name of the BEGIN tag's value
@@ -272,10 +296,7 @@ impl<'s> Parser<'s> {
             } else if property.name == "END" {
                 if property.raw_value != component.name {
                     self.pos = start_pos;
-                    let s = format!("Mismatched tags: BEGIN:{} vs END:{}",
-                                    component.name,
-                                    property.raw_value);
-                    return Err(VObjectErrorKind::ParserError(s));
+                    return Err(ParseErrorReason::MismatchedTag(component.name, property.raw_value));
                 }
 
                 break;
@@ -290,7 +311,6 @@ impl<'s> Parser<'s> {
 
 #[cfg(test)]
 mod tests {
-    use error::*;
     use super::Parser;
 
     #[test]
@@ -348,7 +368,7 @@ mod tests {
         // Test for infinite loops as well
         use std::sync::mpsc::{channel, RecvTimeoutError};
         use std::time::Duration;
-        use error::VObjectErrorKind;
+        use super::ParseErrorReason;
         let mut p = Parser {input: "BEGIN:a\nBEGIN:b\nEND:a", pos: 0};
 
         let (tx, rx) = channel();
@@ -358,7 +378,10 @@ mod tests {
             Err(RecvTimeoutError::Timeout) => assert!(false),
             Ok(Err(e)) => {
                 match e {
-                    VObjectErrorKind::ParserError { .. } => assert!(true),
+                    ParseErrorReason::MismatchedTag(begin, end) => {
+                        assert_eq!(begin, "b");
+                        assert_eq!(end, "a");
+                    },
                     _ => assert!(false),
                 }
             },
