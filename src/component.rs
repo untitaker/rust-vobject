@@ -150,7 +150,7 @@ pub fn fold_line(line: &str) -> String {
     let mut pos = 0;
     let mut next_pos = limit;
     while bytes_remaining > limit {
-        while line.is_char_boundary(next_pos) == false {
+        while !line.is_char_boundary(next_pos) {
             next_pos -= 1;
         }
         ret.push_str(&line[pos..next_pos]);
