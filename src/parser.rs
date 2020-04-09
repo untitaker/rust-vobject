@@ -36,7 +36,7 @@ pub struct Parser<'s> {
 impl<'s> Parser<'s> {
     pub fn new(input: &'s str) -> Self {
         Parser {
-            input: input,
+            input,
             pos: 0,
         }
     }
@@ -185,8 +185,8 @@ impl<'s> Parser<'s> {
         let value = self.consume_property_value()?;
 
         Ok(Property {
-            name: name,
-            params: params,
+            name,
+            params,
             raw_value: value,
             prop_group: group,
         })
