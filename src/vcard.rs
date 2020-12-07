@@ -31,7 +31,7 @@ impl Vcard {
 
     /// Helper for `VcardBuilder::new()`
     pub fn builder() -> VcardBuilder {
-        VcardBuilder::new()
+        VcardBuilder::default()
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
@@ -95,6 +95,7 @@ impl Deref for Vcard {
 }
 
 /// A builder for building a Vcard object.
+#[derive(Default)]
 pub struct VcardBuilder {
     properties: BTreeMap<String, Vec<Property>>
 }
@@ -104,6 +105,7 @@ macro_rules! make_builder_fn {
         fn $fnname:ident building $property_name:tt with_params,
         $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
     ) => {
+        #[allow(clippy::too_many_arguments)]
         pub fn $fnname(mut self, params: $crate::param::Parameters, $( $arg_name : $arg_type ),*) -> Self {
             let raw_value = vec![ $( $arg_name ),* ]
                 .into_iter()
@@ -148,12 +150,6 @@ macro_rules! make_builder_fn {
 }
 
 impl VcardBuilder {
-    pub fn new() -> Self {
-        VcardBuilder {
-            properties: BTreeMap::new(),
-        }
-    }
-
     pub fn build(self) -> VObjectResult<Vcard> {
         let mut v = Vcard::default();
         v.set_properties(self.properties);
@@ -161,7 +157,7 @@ impl VcardBuilder {
     }
 
     make_builder_fn!(fn with_adr building "ADR" with_params,
-                     |o| o.unwrap_or(String::from("")) =>
+                     |o| o.unwrap_or_else(String::new) =>
                      pobox    : Option<String>,
                      ext      : Option<String>,
                      street   : Option<String>,
@@ -185,7 +181,7 @@ impl VcardBuilder {
     make_builder_fn!(fn with_member       building "MEMBER"             , |o| o => uri: String);
 
     make_builder_fn!(fn with_name building "N" with_params,
-                     |o| o.unwrap_or(String::from("")) =>
+                     |o| o.unwrap_or_else(String::new) =>
                      surname            : Option<String>,
                      given_name         : Option<String>,
                      additional_name    : Option<String>,
@@ -259,23 +255,23 @@ impl Name {
     }
 
     pub fn surname(&self) -> Option<String> {
-        self.0.split(";").nth(0).map(String::from)
+        self.0.split(';').next().map(String::from)
     }
 
     pub fn given_name(&self) -> Option<String> {
-        self.0.split(";").nth(1).map(String::from)
+        self.0.split(';').nth(1).map(String::from)
     }
 
     pub fn additional_names(&self) -> Option<String> {
-        self.0.split(";").nth(2).map(String::from)
+        self.0.split(';').nth(2).map(String::from)
     }
 
     pub fn honorific_prefixes(&self) -> Option<String> {
-        self.0.split(";").nth(3).map(String::from)
+        self.0.split(';').nth(3).map(String::from)
     }
 
     pub fn honorific_suffixes(&self) -> Option<String> {
-        self.0.split(";").nth(4).map(String::from)
+        self.0.split(';').nth(4).map(String::from)
     }
 
     /// Alias for Name::surname()

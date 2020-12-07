@@ -47,7 +47,7 @@ impl Component {
 
     /// Retrieve properties by key. Returns an empty slice if key doesn't exist.
     pub fn get_all<P: AsRef<str>>(&self, name: P) -> &[Property] {
-        static EMPTY: &'static [Property] = &[];
+        static EMPTY: &[Property] = &[];
         match self.props.get(name.as_ref()) {
             Some(values) => &values[..],
             None => EMPTY
@@ -150,7 +150,7 @@ pub fn fold_line(line: &str) -> String {
     let mut pos = 0;
     let mut next_pos = limit;
     while bytes_remaining > limit {
-        while line.is_char_boundary(next_pos) == false {
+        while !line.is_char_boundary(next_pos) {
             next_pos -= 1;
         }
         ret.push_str(&line[pos..next_pos]);
