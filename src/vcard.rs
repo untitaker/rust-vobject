@@ -111,13 +111,7 @@ macro_rules! make_builder_fn {
                 .collect::<Vec<_>>()
                 .join(";");
 
-            let prop = Property {
-                name: String::from($property_name),
-                params: params,
-                raw_value: raw_value,
-                prop_group: None
-            };
-
+            let prop = Property::new($property_name, raw_value);
             self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
@@ -135,12 +129,7 @@ macro_rules! make_builder_fn {
                 .join(";");
 
 
-            let prop = Property {
-                name: String::from($property_name),
-                params: BTreeMap::new(),
-                raw_value: raw_value,
-                prop_group: None
-            };
+            let prop = Property::new($property_name, raw_value);
             self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
