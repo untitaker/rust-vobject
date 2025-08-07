@@ -3,7 +3,7 @@ macro_rules! make_getter_function_for_optional {
         pub fn $fnname(&self) -> Option<$mapper> {
             self.0.get_only($name).cloned().map(From::from)
         }
-    }
+    };
 }
 
 macro_rules! make_getter_function_for_values {
@@ -16,7 +16,7 @@ macro_rules! make_getter_function_for_values {
                 .map(From::from)
                 .collect()
         }
-    }
+    };
 }
 
 macro_rules! create_data_type {
@@ -51,12 +51,11 @@ macro_rules! create_data_type {
                 $name::new(p.raw_value, p.params)
             }
         }
-    }
+    };
 }
 
 #[cfg(feature = "timeconversions")]
-pub const DATE_TIME_FMT : &'static str = "%Y%m%dT%H%M%SZ";
+pub const DATE_TIME_FMT: &str = "%Y%m%dT%H%M%SZ";
 
 #[cfg(feature = "timeconversions")]
-pub const DATE_FMT      : &'static str = "%Y%m%d";
-
+pub const DATE_FMT: &str = "%Y%m%d";

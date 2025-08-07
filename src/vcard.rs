@@ -1,12 +1,12 @@
-use std::ops::Deref;
 use std::collections::BTreeMap;
+use std::ops::Deref;
 
-use component::Component;
-use component::parse_component;
-use property::Property;
+use crate::component::parse_component;
+use crate::component::Component;
+use crate::property::Property;
 
+use crate::error::*;
 use std::result::Result as RResult;
-use error::*;
 
 #[derive(Debug)]
 pub struct Vcard(Component);
@@ -16,7 +16,6 @@ pub struct Vcard(Component);
 /// This type simply holds data and offers functions to access this data. It does not compute
 /// anything.
 impl Vcard {
-
     /// Parse a string to a Vcard object
     ///
     /// Returns an error if the parsed text is not a Vcard (that means that an error is returned
@@ -24,9 +23,7 @@ impl Vcard {
     ///
     pub fn build(s: &str) -> VObjectResult<Vcard> {
         parse_component(s)
-            .and_then(|c| {
-                Self::from_component(c).map_err(|_| VObjectError::NotAVCard)
-            })
+            .and_then(|c| Self::from_component(c).map_err(|_| VObjectError::NotAVCard))
     }
 
     /// Helper for `VcardBuilder::new()`
@@ -35,7 +32,7 @@ impl Vcard {
     }
 
     /// Wrap a Component into a Vcard object, or don't do it if the Component is not a Vcard.
-    pub fn from_component(c: Component)-> RResult<Vcard, Component> {
+    pub fn from_component(c: Component) -> RResult<Vcard, Component> {
         if c.name == "VCARD" {
             Ok(Vcard(c))
         } else {
@@ -43,41 +40,40 @@ impl Vcard {
         }
     }
 
-    make_getter_function_for_values!(adr            , "ADR"          , Adr);
-    make_getter_function_for_optional!(anniversary  , "ANNIVERSARY"  , Anniversary);
-    make_getter_function_for_optional!(bday         , "BDAY"         , BDay);
-    make_getter_function_for_values!(categories     , "CATEGORIES"   , Category);
-    make_getter_function_for_optional!(clientpidmap , "CLIENTPIDMAP" , ClientPidMap);
-    make_getter_function_for_values!(email          , "EMAIL"        , Email);
-    make_getter_function_for_values!(fullname       , "FN"           , FullName);
-    make_getter_function_for_optional!(gender       , "GENDER"       , Gender);
-    make_getter_function_for_values!(geo            , "GEO"          , Geo);
-    make_getter_function_for_values!(impp           , "IMPP"         , IMPP);
-    make_getter_function_for_values!(key            , "KEY"          , Key);
-    make_getter_function_for_values!(lang           , "LANG"         , Lang);
-    make_getter_function_for_values!(logo           , "LOGO"         , Logo);
-    make_getter_function_for_values!(member         , "MEMBER"       , Member);
-    make_getter_function_for_optional!(name         , "N"            , Name);
-    make_getter_function_for_values!(nickname       , "NICKNAME"     , NickName);
-    make_getter_function_for_values!(note           , "NOTE"         , Note);
-    make_getter_function_for_values!(org            , "ORG"          , Organization);
-    make_getter_function_for_values!(photo          , "PHOTO"        , Photo);
-    make_getter_function_for_optional!(proid        , "PRIOD"        , Proid);
-    make_getter_function_for_values!(related        , "RELATED"      , Related);
-    make_getter_function_for_optional!(rev          , "REV"          , Rev);
-    make_getter_function_for_values!(role           , "ROLE"         , Title);
-    make_getter_function_for_values!(sound          , "SOUND"        , Sound);
-    make_getter_function_for_values!(tel            , "TEL"          , Tel);
-    make_getter_function_for_values!(title          , "TITLE"        , Title);
-    make_getter_function_for_values!(tz             , "TZ"           , Tz);
-    make_getter_function_for_optional!(uid          , "UID"          , Uid);
-    make_getter_function_for_values!(url            , "URL"          , Url);
-    make_getter_function_for_optional!(version      , "VERSION"      , Version);
+    make_getter_function_for_values!(adr, "ADR", Adr);
+    make_getter_function_for_optional!(anniversary, "ANNIVERSARY", Anniversary);
+    make_getter_function_for_optional!(bday, "BDAY", BDay);
+    make_getter_function_for_values!(categories, "CATEGORIES", Category);
+    make_getter_function_for_optional!(clientpidmap, "CLIENTPIDMAP", ClientPidMap);
+    make_getter_function_for_values!(email, "EMAIL", Email);
+    make_getter_function_for_values!(fullname, "FN", FullName);
+    make_getter_function_for_optional!(gender, "GENDER", Gender);
+    make_getter_function_for_values!(geo, "GEO", Geo);
+    make_getter_function_for_values!(impp, "IMPP", IMPP);
+    make_getter_function_for_values!(key, "KEY", Key);
+    make_getter_function_for_values!(lang, "LANG", Lang);
+    make_getter_function_for_values!(logo, "LOGO", Logo);
+    make_getter_function_for_values!(member, "MEMBER", Member);
+    make_getter_function_for_optional!(name, "N", Name);
+    make_getter_function_for_values!(nickname, "NICKNAME", NickName);
+    make_getter_function_for_values!(note, "NOTE", Note);
+    make_getter_function_for_values!(org, "ORG", Organization);
+    make_getter_function_for_values!(photo, "PHOTO", Photo);
+    make_getter_function_for_optional!(proid, "PRIOD", Proid);
+    make_getter_function_for_values!(related, "RELATED", Related);
+    make_getter_function_for_optional!(rev, "REV", Rev);
+    make_getter_function_for_values!(role, "ROLE", Title);
+    make_getter_function_for_values!(sound, "SOUND", Sound);
+    make_getter_function_for_values!(tel, "TEL", Tel);
+    make_getter_function_for_values!(title, "TITLE", Title);
+    make_getter_function_for_values!(tz, "TZ", Tz);
+    make_getter_function_for_optional!(uid, "UID", Uid);
+    make_getter_function_for_values!(url, "URL", Url);
+    make_getter_function_for_optional!(version, "VERSION", Version);
 
     fn set_properties(&mut self, props: BTreeMap<String, Vec<Property>>) {
         self.0.props = props;
     }
-
 }
 
 impl Default for Vcard {
@@ -96,7 +92,7 @@ impl Deref for Vcard {
 
 /// A builder for building a Vcard object.
 pub struct VcardBuilder {
-    properties: BTreeMap<String, Vec<Property>>
+    properties: BTreeMap<String, Vec<Property>>,
 }
 
 macro_rules! make_builder_fn {
@@ -104,6 +100,7 @@ macro_rules! make_builder_fn {
         fn $fnname:ident building $property_name:tt with_params,
         $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
     ) => {
+        #[allow(clippy::too_many_arguments)]
         pub fn $fnname(mut self, params: $crate::param::Parameters, $( $arg_name : $arg_type ),*) -> Self {
             let raw_value = vec![ $( $arg_name ),* ]
                 .into_iter()
@@ -113,8 +110,8 @@ macro_rules! make_builder_fn {
 
             let prop = Property {
                 name: String::from($property_name),
-                params: params,
-                raw_value: raw_value,
+                params,
+                raw_value,
                 prop_group: None
             };
 
@@ -138,12 +135,18 @@ macro_rules! make_builder_fn {
             let prop = Property {
                 name: String::from($property_name),
                 params: BTreeMap::new(),
-                raw_value: raw_value,
+                raw_value,
                 prop_group: None
             };
             self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
+    }
+}
+
+impl Default for VcardBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -207,7 +210,6 @@ impl VcardBuilder {
     make_builder_fn!(fn with_uid      building "UID"                  , |o| o => uri: String);
     make_builder_fn!(fn with_url      building "URL"                  , |o| o => uri: String);
     make_builder_fn!(fn with_version  building "VERSION"              , |o| o => version: String);
-
 }
 
 create_data_type!(Adr);
@@ -250,10 +252,9 @@ create_data_type!(Version);
 /// * If there is only one element after splitting, this is considered the lastname
 /// * If there are two elements, this is firstname and lastname
 /// * If there are more than two elements, firstname and lastname are the first and last elements
-/// respectively, all others are middlenames.
+///   respectively, all others are middlenames.
 ///
 impl Name {
-
     pub fn plain(&self) -> String {
         self.0.clone()
     }
@@ -283,7 +284,6 @@ impl Name {
     pub fn family_name(&self) -> Option<String> {
         self.surname()
     }
-
 }
 
 #[cfg(test)]
@@ -305,41 +305,50 @@ mod test {
             ADR;HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\n\
             EMAIL;PREF;INTERNET:erika@mustermann.de\n\
             REV:20140301T221110Z\n\
-            END:VCARD\n\r\n\n").unwrap();
+            END:VCARD\n\r\n\n",
+        )
+        .unwrap();
 
-        assert_eq!(item.adr()[0].raw(), ";;Heidestrasse 17;Koeln;;51147;Deutschland");
+        assert_eq!(
+            item.adr()[0].raw(),
+            ";;Heidestrasse 17;Koeln;;51147;Deutschland"
+        );
         assert_eq!(item.fullname()[0].raw(), "Erika Mustermann");
         assert_eq!(item.name().unwrap().plain(), "Mustermann;Erika");
-        assert_eq!(item.name().unwrap().surname().unwrap()    , "Mustermann");
-        assert_eq!(item.name().unwrap().given_name().unwrap() , "Erika");
-        assert_eq!(item.org()[0].raw() , "Wikipedia");
-        assert_eq!(item.title()[0].raw() , "Oberleutnant");
+        assert_eq!(item.name().unwrap().surname().unwrap(), "Mustermann");
+        assert_eq!(item.name().unwrap().given_name().unwrap(), "Erika");
+        assert_eq!(item.org()[0].raw(), "Wikipedia");
+        assert_eq!(item.title()[0].raw(), "Oberleutnant");
     }
 
     #[test]
     fn test_vcard_builder() {
-        use component::write_component;
+        use crate::component::write_component;
 
         let build = Vcard::builder()
-            .with_name(parameters!(),
-                       None,
-                       Some("Mustermann".into()),
-                       None,
-                       Some("Erika".into()),
-                       None)
+            .with_name(
+                parameters!(),
+                None,
+                Some("Mustermann".into()),
+                None,
+                Some("Erika".into()),
+                None,
+            )
             .with_fullname("Erika Mustermann".into())
             .with_org(vec!["Wikipedia".into()])
             .with_title("Oberleutnant".into())
             .with_tel(parameters!("TYPE" => "WORK"), "(0221) 9999123".into())
             .with_tel(parameters!("TYPE" => "HOME"), "(0221) 1234567".into())
-            .with_adr(parameters!("TYPE" => "HOME"),
-                      None,
-                      None,
-                      Some("Heidestrasse 17".into()),
-                      Some("Koeln".into()),
-                      None,
-                      Some("51147".into()),
-                      Some("Deutschland".into()))
+            .with_adr(
+                parameters!("TYPE" => "HOME"),
+                None,
+                None,
+                Some("Heidestrasse 17".into()),
+                Some("Koeln".into()),
+                None,
+                Some("51147".into()),
+                Some("Deutschland".into()),
+            )
             .with_email("erika@mustermann.de".into())
             .with_rev("20140301T221110Z".into())
             .build()
@@ -347,8 +356,7 @@ mod test {
 
         let build_string = write_component(&build);
 
-        let expected =
-            "BEGIN:VCARD\r\n\
+        let expected = "BEGIN:VCARD\r\n\
             ADR;TYPE=HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\r\n\
             EMAIL:erika@mustermann.de\r\n\
             FN:Erika Mustermann\r\n\
@@ -360,9 +368,6 @@ mod test {
             TITLE:Oberleutnant\r\n\
             END:VCARD\r\n";
 
-
         assert_eq!(expected, build_string);
     }
-
 }
-
