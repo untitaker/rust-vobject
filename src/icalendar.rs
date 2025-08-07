@@ -205,6 +205,11 @@ pub struct EventBuilder(Component);
 
 macro_rules! make_setter_function_for {
     ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        #[doc = concat!("Setter for \"", $name, "\" property")]
+        #[doc = ""]
+        #[doc = "# Notice"]
+        #[doc = ""]
+        #[doc = "Internally, the property is overridden. Old values are dropped silently."]
         pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
             let property = Property {
                 name: String::from($name),
@@ -220,6 +225,11 @@ macro_rules! make_setter_function_for {
 
 macro_rules! make_function_for {
     ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
+        #[doc = concat!("Chainable setter for \"", $name, "\" property.")]
+        #[doc = ""]
+        #[doc = "# Notice"]
+        #[doc = ""]
+        #[doc = "Internally, the property is added, not overridden."]
         pub fn $fnname(mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
             let property = Property {
                 name: String::from($name),
