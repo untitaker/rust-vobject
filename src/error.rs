@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use ::parser::ParseErrorReason;
+use crate::parser::ParseErrorReason;
 
 #[derive(Debug, Clone, Error)]
 pub enum VObjectError {

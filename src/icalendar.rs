@@ -1,15 +1,15 @@
 use std::collections::BTreeMap;
 
-use component::Component;
-use component::parse_component;
-use property::Property;
-use error::*;
+use crate::component::Component;
+use crate::component::parse_component;
+use crate::property::Property;
+use crate::error::*;
 
 #[cfg(feature = "timeconversions")] use chrono::NaiveDateTime;
 #[cfg(feature = "timeconversions")] use chrono::NaiveDate;
 
-#[cfg(feature = "timeconversions")] use util::DATE_TIME_FMT;
-#[cfg(feature = "timeconversions")] use util::DATE_FMT;
+#[cfg(feature = "timeconversions")] use crate::util::DATE_TIME_FMT;
+#[cfg(feature = "timeconversions")] use crate::util::DATE_FMT;
 
 /// An ICalendar representing type
 #[derive(Debug)]
@@ -243,176 +243,56 @@ impl EventBuilder {
         self.0
     }
 
-    /// Setter for "DTEND" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_dtend, "DTEND", Dtend, Dtend::into_raw);
 
-    /// Setter for "DTSTART" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_dtstart, "DTSTART", Dtstart, Dtstart::into_raw);
 
-    /// Setter for "DTSTAMP" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_dtstamp, "DTSTAMP", Dtstamp, Dtstamp::into_raw);
 
-    /// Setter for "UID" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_uid, "UID", Uid, Uid::into_raw);
 
-    /// Setter for "DESCRIPTION" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_description, "DESCRIPTION", Description, Description::into_raw);
 
-    /// Setter for "SUMMARY" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_summary, "SUMMARY", Summary, Summary::into_raw);
 
-    /// Setter for "URL" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_url, "URL", Url, Url::into_raw);
 
-    /// Setter for "LOCATION" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_location, "LOCATION", Location, Location::into_raw);
 
-    /// Setter for "CLASS" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_class, "CLASS", Class, Class::into_raw);
 
-    /// Setter for "CATEGORIES" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_categories, "CATEGORIES", Categories, Categories::into_raw);
 
-    /// Setter for "TRANSP" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_transp, "TRANSP", Transp, Transp::into_raw);
 
-    /// Setter for "RRULE" property
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is overridden. Old values are dropped silently:
     make_setter_function_for!(set_rrule, "RRULE", Rrule, Rrule::into_raw);
 
     //
     // chainable builders
     //
 
-    /// Chainable setter for "DTEND" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_dtend, "DTEND", Dtend, Dtend::into_raw);
 
-    /// Chainable setter for "DTSTART" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_dtstart, "DTSTART", Dtstart, Dtstart::into_raw);
 
-    /// Chainable setter for "DTSTAMP" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_dtstamp, "DTSTAMP", Dtstamp, Dtstamp::into_raw);
 
-    /// Chainable setter for "UID" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_uid, "UID", Uid, Uid::into_raw);
 
-    /// Chainable setter for "DESCRIPTION" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_description, "DESCRIPTION", Description, Description::into_raw);
 
-    /// Chainable setter for "SUMMARY" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_summary, "SUMMARY", Summary, Summary::into_raw);
 
-    /// Chainable setter for "URL" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_url, "URL", Url, Url::into_raw);
 
-    /// Chainable setter for "LOCATION" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_location, "LOCATION", Location, Location::into_raw);
 
-    /// Chainable setter for "CLASS" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_class, "CLASS", Class, Class::into_raw);
 
-    /// Chainable setter for "CATEGORIES" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_categories, "CATEGORIES", Categories, Categories::into_raw);
 
-    /// Chainable setter for "TRANSP" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_transp, "TRANSP", Transp, Transp::into_raw);
 
-    /// Chainable setter for "RRULE" property.
-    ///
-    /// # Notice
-    ///
-    /// Internally, the property is added, not overridden.
     make_function_for!(with_rrule, "RRULE", Rrule, Rrule::into_raw);
 
 }
@@ -421,7 +301,7 @@ impl EventBuilder {
 mod tests {
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;
-    use util::*;
+    use crate::util::*;
     use super::ICalendar;
 
     use super::*;

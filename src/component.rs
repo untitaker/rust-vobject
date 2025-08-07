@@ -1,10 +1,10 @@
 use std::str::FromStr;
 use std::collections::BTreeMap;
 
-use property::Property;
-use parser::{Parser, ParseErrorReason};
+use crate::property::Property;
+use crate::parser::{Parser, ParseErrorReason};
 
-use error::*;
+use crate::error::*;
 
 #[derive(Clone, Debug)]
 pub struct Component {
@@ -29,7 +29,7 @@ impl Component {
 
     /// Append the given property, preserve other same-named properties.
     pub fn push(&mut self, prop: Property) {
-        self.props.entry(prop.name.clone()).or_insert_with(Vec::new).push(prop);
+        self.props.entry(prop.name.clone()).or_default().push(prop);
     }
 
     /// Set the given property, remove other same-named properties.
@@ -47,7 +47,7 @@ impl Component {
 
     /// Retrieve properties by key. Returns an empty slice if key doesn't exist.
     pub fn get_all<P: AsRef<str>>(&self, name: P) -> &[Property] {
-        static EMPTY: &'static [Property] = &[];
+        static EMPTY: &[Property] = &[];
         match self.props.get(name.as_ref()) {
             Some(values) => &values[..],
             None => EMPTY
@@ -109,15 +109,15 @@ pub fn write_component(c: &Component) -> String {
         for (prop_name, props) in &c.props {
             for prop in props.iter() {
                 if let Some(ref x) = prop.prop_group {
-                    buf.push_str(&x);
+                    buf.push_str(x);
                     buf.push('.');
                 };
-                buf.push_str(&prop_name);
+                buf.push_str(prop_name);
                 for (param_key, param_value) in &prop.params {
                     buf.push(';');
-                    buf.push_str(&param_key);
+                    buf.push_str(param_key);
                     buf.push('=');
-                    buf.push_str(&param_value);
+                    buf.push_str(param_value);
                 }
                 buf.push(':');
                 buf.push_str(&fold_line(&prop.raw_value));
@@ -150,7 +150,7 @@ pub fn fold_line(line: &str) -> String {
     let mut pos = 0;
     let mut next_pos = limit;
     while bytes_remaining > limit {
-        while line.is_char_boundary(next_pos) == false {
+        while !line.is_char_boundary(next_pos) {
             next_pos -= 1;
         }
         ret.push_str(&line[pos..next_pos]);
@@ -168,7 +168,7 @@ pub fn fold_line(line: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use component::fold_line;
+    use crate::component::fold_line;
 
     #[test]
     fn test_fold() {

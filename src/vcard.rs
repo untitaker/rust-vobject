@@ -1,12 +1,12 @@
 use std::ops::Deref;
 use std::collections::BTreeMap;
 
-use component::Component;
-use component::parse_component;
-use property::Property;
+use crate::component::Component;
+use crate::component::parse_component;
+use crate::property::Property;
 
 use std::result::Result as RResult;
-use error::*;
+use crate::error::*;
 
 #[derive(Debug)]
 pub struct Vcard(Component);
@@ -104,6 +104,7 @@ macro_rules! make_builder_fn {
         fn $fnname:ident building $property_name:tt with_params,
         $mapfn:expr => $( $arg_name:ident : $arg_type:ty ),*
     ) => {
+        #[allow(clippy::too_many_arguments)]
         pub fn $fnname(mut self, params: $crate::param::Parameters, $( $arg_name : $arg_type ),*) -> Self {
             let raw_value = vec![ $( $arg_name ),* ]
                 .into_iter()
@@ -113,8 +114,8 @@ macro_rules! make_builder_fn {
 
             let prop = Property {
                 name: String::from($property_name),
-                params: params,
-                raw_value: raw_value,
+                params,
+                raw_value,
                 prop_group: None
             };
 
@@ -138,12 +139,18 @@ macro_rules! make_builder_fn {
             let prop = Property {
                 name: String::from($property_name),
                 params: BTreeMap::new(),
-                raw_value: raw_value,
+                raw_value,
                 prop_group: None
             };
             self.properties.entry(String::from($property_name)).or_insert(vec![]).push(prop);
             self
         }
+    }
+}
+
+impl Default for VcardBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -250,7 +257,7 @@ create_data_type!(Version);
 /// * If there is only one element after splitting, this is considered the lastname
 /// * If there are two elements, this is firstname and lastname
 /// * If there are more than two elements, firstname and lastname are the first and last elements
-/// respectively, all others are middlenames.
+///   respectively, all others are middlenames.
 ///
 impl Name {
 
@@ -318,7 +325,7 @@ mod test {
 
     #[test]
     fn test_vcard_builder() {
-        use component::write_component;
+        use crate::component::write_component;
 
         let build = Vcard::builder()
             .with_name(parameters!(),

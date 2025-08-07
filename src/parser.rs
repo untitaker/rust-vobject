@@ -1,10 +1,9 @@
 use std::collections::BTreeMap;
-use std::fmt;
 
 use thiserror::Error;
 
-use component::Component;
-use property::Property;
+use crate::component::Component;
+use crate::property::Property;
 
 #[derive(Debug, Clone, Error)]
 pub enum ParseErrorReason {
@@ -36,7 +35,7 @@ pub struct Parser<'s> {
 impl<'s> Parser<'s> {
     pub fn new(input: &'s str) -> Self {
         Parser {
-            input: input,
+            input,
             pos: 0,
         }
     }
@@ -115,10 +114,7 @@ impl<'s> Parser<'s> {
 
         let consumed = match self.consume_char() {
             Some('\n') => true,
-            Some('\r') => match self.consume_char() {
-                Some('\n') => true,
-                _ => false,
-            },
+            Some('\r') => matches!(self.consume_char(), Some('\n')),
             _ => false,
         };
 
@@ -126,14 +122,14 @@ impl<'s> Parser<'s> {
             Ok(())
         } else {
             self.pos = start_pos;
-            return Err(ParseErrorReason::ExpectedEol)
+            Err(ParseErrorReason::ExpectedEol)
         }
     }
 
     fn sloppy_terminate_line(&mut self) -> ParseResult<()> {
         if !self.eof() {
             self.consume_eol()?;
-            while let Ok(_) = self.consume_eol() {}
+            while self.consume_eol().is_ok() {}
         };
 
         Ok(())
@@ -185,8 +181,8 @@ impl<'s> Parser<'s> {
         let value = self.consume_property_value()?;
 
         Ok(Property {
-            name: name,
-            params: params,
+            name,
+            params,
             raw_value: value,
             prop_group: group,
         })

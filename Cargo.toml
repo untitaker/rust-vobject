@@ -1,6 +1,7 @@
 [package]
 name = "vobject"
 version = "0.8.0"
+edition = "2021"
 description = "Simple VObject parsing library."
 
 authors = ["Markus Unterwaditzer <markus@unterwaditzer.net>"]
