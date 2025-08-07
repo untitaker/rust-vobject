@@ -1,22 +1,25 @@
 use std::collections::BTreeMap;
 
-use crate::component::Component;
 use crate::component::parse_component;
-use crate::property::Property;
+use crate::component::Component;
 use crate::error::*;
+use crate::property::Property;
 
-#[cfg(feature = "timeconversions")] use chrono::NaiveDateTime;
-#[cfg(feature = "timeconversions")] use chrono::NaiveDate;
+#[cfg(feature = "timeconversions")]
+use chrono::NaiveDate;
+#[cfg(feature = "timeconversions")]
+use chrono::NaiveDateTime;
 
-#[cfg(feature = "timeconversions")] use crate::util::DATE_TIME_FMT;
-#[cfg(feature = "timeconversions")] use crate::util::DATE_FMT;
+#[cfg(feature = "timeconversions")]
+use crate::util::DATE_FMT;
+#[cfg(feature = "timeconversions")]
+use crate::util::DATE_TIME_FMT;
 
 /// An ICalendar representing type
 #[derive(Debug)]
 pub struct ICalendar(Component);
 
 impl ICalendar {
-
     /// Parse a string to a ICalendar object
     ///
     /// Returns an error if the parsed text is not a ICalendar (that means that an error is
@@ -45,7 +48,7 @@ impl ICalendar {
 
     /// Wrap a Component into an ICalendar object, or don't do it if the Component is not an
     /// ICalendar.
-    pub fn from_component(c: Component)-> Result<ICalendar, Component> {
+    pub fn from_component(c: Component) -> Result<ICalendar, Component> {
         if c.name == "VCALENDAR" {
             Ok(ICalendar(c))
         } else {
@@ -104,7 +107,6 @@ impl<'a> Iterator for EventIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next().map(Event::from_component)
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -119,23 +121,22 @@ impl<'a> Event<'a> {
         }
     }
 
-    make_getter_function_for_optional!(dtend       , "DTEND"       , Dtend);
-    make_getter_function_for_optional!(dtstart     , "DTSTART"     , Dtstart);
-    make_getter_function_for_optional!(dtstamp     , "DTSTAMP"     , Dtstamp);
-    make_getter_function_for_optional!(uid         , "UID"         , Uid);
-    make_getter_function_for_optional!(description , "DESCRIPTION" , Description);
-    make_getter_function_for_optional!(summary     , "SUMMARY"     , Summary);
-    make_getter_function_for_optional!(url         , "URL"         , Url);
-    make_getter_function_for_optional!(location    , "LOCATION"    , Location);
-    make_getter_function_for_optional!(class       , "CLASS"       , Class);
-    make_getter_function_for_optional!(categories  , "CATEGORIES"  , Categories);
-    make_getter_function_for_optional!(transp      , "TRANSP"      , Transp);
-    make_getter_function_for_optional!(rrule       , "RRULE"       , Rrule);
+    make_getter_function_for_optional!(dtend, "DTEND", Dtend);
+    make_getter_function_for_optional!(dtstart, "DTSTART", Dtstart);
+    make_getter_function_for_optional!(dtstamp, "DTSTAMP", Dtstamp);
+    make_getter_function_for_optional!(uid, "UID", Uid);
+    make_getter_function_for_optional!(description, "DESCRIPTION", Description);
+    make_getter_function_for_optional!(summary, "SUMMARY", Summary);
+    make_getter_function_for_optional!(url, "URL", Url);
+    make_getter_function_for_optional!(location, "LOCATION", Location);
+    make_getter_function_for_optional!(class, "CLASS", Class);
+    make_getter_function_for_optional!(categories, "CATEGORIES", Categories);
+    make_getter_function_for_optional!(transp, "TRANSP", Transp);
+    make_getter_function_for_optional!(rrule, "RRULE", Rrule);
 
     pub fn build() -> EventBuilder {
         EventBuilder(Component::new(String::from("VEVENT")))
     }
-
 }
 
 create_data_type!(Dtend);
@@ -165,41 +166,38 @@ pub trait AsDateTime {
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtend {
-
     fn as_datetime(&self) -> VObjectResult<Time> {
-        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Time::DateTime(dt),
-            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)?,
-        })
+        Ok(
+            match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+                Ok(dt) => Time::DateTime(dt),
+                Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT).map(Time::Date)?,
+            },
+        )
     }
-
 }
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstart {
-
     fn as_datetime(&self) -> VObjectResult<Time> {
-        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Time::DateTime(dt),
-            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)?,
-        })
+        Ok(
+            match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+                Ok(dt) => Time::DateTime(dt),
+                Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT).map(Time::Date)?,
+            },
+        )
     }
-
 }
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstamp {
-
     fn as_datetime(&self) -> VObjectResult<Time> {
-        Ok(match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
-            Ok(dt) => Time::DateTime(dt),
-            Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT)
-                .map(Time::Date)?,
-        })
+        Ok(
+            match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+                Ok(dt) => Time::DateTime(dt),
+                Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT).map(Time::Date)?,
+            },
+        )
     }
-
 }
 
 #[derive(Clone, Debug)]
@@ -209,9 +207,9 @@ macro_rules! make_setter_function_for {
     ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
         pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
             let property = Property {
-                name:       String::from($name),
-                params:     params.unwrap_or_else(|| BTreeMap::new()),
-                raw_value:  $tostring(value),
+                name: String::from($name),
+                params: params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value: $tostring(value),
                 prop_group: None,
             };
 
@@ -224,9 +222,9 @@ macro_rules! make_function_for {
     ($fnname:ident, $name:expr, $type:ty, $tostring:expr) => {
         pub fn $fnname(mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
             let property = Property {
-                name:       String::from($name),
-                params:     params.unwrap_or_else(|| BTreeMap::new()),
-                raw_value:  $tostring(value),
+                name: String::from($name),
+                params: params.unwrap_or_else(|| BTreeMap::new()),
+                raw_value: $tostring(value),
                 prop_group: None,
             };
 
@@ -237,7 +235,6 @@ macro_rules! make_function_for {
 }
 
 impl EventBuilder {
-
     /// Private function for adding event to calendar
     fn into_component(self) -> Component {
         self.0
@@ -251,7 +248,12 @@ impl EventBuilder {
 
     make_setter_function_for!(set_uid, "UID", Uid, Uid::into_raw);
 
-    make_setter_function_for!(set_description, "DESCRIPTION", Description, Description::into_raw);
+    make_setter_function_for!(
+        set_description,
+        "DESCRIPTION",
+        Description,
+        Description::into_raw
+    );
 
     make_setter_function_for!(set_summary, "SUMMARY", Summary, Summary::into_raw);
 
@@ -261,7 +263,12 @@ impl EventBuilder {
 
     make_setter_function_for!(set_class, "CLASS", Class, Class::into_raw);
 
-    make_setter_function_for!(set_categories, "CATEGORIES", Categories, Categories::into_raw);
+    make_setter_function_for!(
+        set_categories,
+        "CATEGORIES",
+        Categories,
+        Categories::into_raw
+    );
 
     make_setter_function_for!(set_transp, "TRANSP", Transp, Transp::into_raw);
 
@@ -279,7 +286,12 @@ impl EventBuilder {
 
     make_function_for!(with_uid, "UID", Uid, Uid::into_raw);
 
-    make_function_for!(with_description, "DESCRIPTION", Description, Description::into_raw);
+    make_function_for!(
+        with_description,
+        "DESCRIPTION",
+        Description,
+        Description::into_raw
+    );
 
     make_function_for!(with_summary, "SUMMARY", Summary, Summary::into_raw);
 
@@ -289,25 +301,28 @@ impl EventBuilder {
 
     make_function_for!(with_class, "CLASS", Class, Class::into_raw);
 
-    make_function_for!(with_categories, "CATEGORIES", Categories, Categories::into_raw);
+    make_function_for!(
+        with_categories,
+        "CATEGORIES",
+        Categories,
+        Categories::into_raw
+    );
 
     make_function_for!(with_transp, "TRANSP", Transp, Transp::into_raw);
 
     make_function_for!(with_rrule, "RRULE", Rrule, Rrule::into_raw);
-
 }
 
 #[cfg(all(test, feature = "timeconversions"))]
 mod tests {
+    use super::ICalendar;
+    use crate::util::*;
     use chrono::NaiveDate;
     use chrono::NaiveDateTime;
-    use crate::util::*;
-    use super::ICalendar;
 
     use super::*;
 
-    const TEST_ENTRY : &'static str =
-            "BEGIN:VCALENDAR\n\
+    const TEST_ENTRY: &'static str = "BEGIN:VCALENDAR\n\
             VERSION:2.0\n\
             PRODID:http://www.example.com/calendarapplication/\n\
             METHOD:PUBLISH\n\
@@ -324,7 +339,7 @@ mod tests {
             END:VEVENT\n\
             END:VCALENDAR\n";
 
-    const TEST_ENTRY_OC : &'static str = // Lets see how owncloud foo works here
+    const TEST_ENTRY_OC: &'static str = // Lets see how owncloud foo works here
         "BEGIN:VCALENDAR\n\
         VERSION:2.0\n\
         PRODID:ownCloud Calendar\n\
@@ -360,25 +375,52 @@ mod tests {
     fn test_icalendar_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         assert_eq!(ical.version().unwrap().raw(), "2.0");
-        assert_eq!(ical.prodid().unwrap().raw(), "http://www.example.com/calendarapplication/");
+        assert_eq!(
+            ical.prodid().unwrap().raw(),
+            "http://www.example.com/calendarapplication/"
+        );
     }
 
     #[test]
     fn test_event_attributes() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20060919T215900Z".to_owned()));
-        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20060910T220000Z".to_owned()));
-        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20060812T125900Z".to_owned()));
-        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("461092315540@example.com".to_owned()));
-        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("Beschreibung des Termines".to_owned()));
-        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Eine Kurzinfo".to_owned()));
-        assert_eq!(ev.url()                                  , None);
-        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("Somewhere".to_owned()));
-        assert_eq!(ev.class().map(|e| e.raw().clone())       , Some("PUBLIC".to_owned()));
-        assert_eq!(ev.categories()                           , None);
-        assert_eq!(ev.transp()                               , None);
-        assert_eq!(ev.rrule()                                , None);
+        assert_eq!(
+            ev.dtend().map(|e| e.raw().clone()),
+            Some("20060919T215900Z".to_owned())
+        );
+        assert_eq!(
+            ev.dtstart().map(|e| e.raw().clone()),
+            Some("20060910T220000Z".to_owned())
+        );
+        assert_eq!(
+            ev.dtstamp().map(|e| e.raw().clone()),
+            Some("20060812T125900Z".to_owned())
+        );
+        assert_eq!(
+            ev.uid().map(|e| e.raw().clone()),
+            Some("461092315540@example.com".to_owned())
+        );
+        assert_eq!(
+            ev.description().map(|e| e.raw().clone()),
+            Some("Beschreibung des Termines".to_owned())
+        );
+        assert_eq!(
+            ev.summary().map(|e| e.raw().clone()),
+            Some("Eine Kurzinfo".to_owned())
+        );
+        assert_eq!(ev.url(), None);
+        assert_eq!(
+            ev.location().map(|e| e.raw().clone()),
+            Some("Somewhere".to_owned())
+        );
+        assert_eq!(
+            ev.class().map(|e| e.raw().clone()),
+            Some("PUBLIC".to_owned())
+        );
+        assert_eq!(ev.categories(), None);
+        assert_eq!(ev.transp(), None);
+        assert_eq!(ev.rrule(), None);
     }
 
     #[test]
@@ -387,18 +429,39 @@ mod tests {
         assert_eq!(ical.version().unwrap().raw(), "2.0");
         assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.dtend().map(|e| e.raw().clone())       , Some("20160326".to_owned()));
-        assert_eq!(ev.dtstart().map(|e| e.raw().clone())     , Some("20160325".to_owned()));
-        assert_eq!(ev.dtstamp().map(|e| e.raw().clone())     , Some("20160128T223013Z".to_owned()));
-        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("ff411055a5".to_owned()));
-        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("".to_owned()));
-        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("Amon Amarth - Jomsviking".to_owned()));
-        assert_eq!(ev.url()                                  , None);
-        assert_eq!(ev.location().map(|e| e.raw().clone())    , Some("".to_owned()));
-        assert_eq!(ev.class().map(|e| e.raw().clone())       , None);
-        assert_eq!(ev.categories().map(|e| e.raw().clone())  , Some("".to_owned()));
-        assert_eq!(ev.transp()                               , None);
-        assert_eq!(ev.rrule()                                , None);
+        assert_eq!(
+            ev.dtend().map(|e| e.raw().clone()),
+            Some("20160326".to_owned())
+        );
+        assert_eq!(
+            ev.dtstart().map(|e| e.raw().clone()),
+            Some("20160325".to_owned())
+        );
+        assert_eq!(
+            ev.dtstamp().map(|e| e.raw().clone()),
+            Some("20160128T223013Z".to_owned())
+        );
+        assert_eq!(
+            ev.uid().map(|e| e.raw().clone()),
+            Some("ff411055a5".to_owned())
+        );
+        assert_eq!(
+            ev.description().map(|e| e.raw().clone()),
+            Some("".to_owned())
+        );
+        assert_eq!(
+            ev.summary().map(|e| e.raw().clone()),
+            Some("Amon Amarth - Jomsviking".to_owned())
+        );
+        assert_eq!(ev.url(), None);
+        assert_eq!(ev.location().map(|e| e.raw().clone()), Some("".to_owned()));
+        assert_eq!(ev.class().map(|e| e.raw().clone()), None);
+        assert_eq!(
+            ev.categories().map(|e| e.raw().clone()),
+            Some("".to_owned())
+        );
+        assert_eq!(ev.transp(), None);
+        assert_eq!(ev.rrule(), None);
     }
 
     #[cfg(feature = "timeconversions")]
@@ -406,9 +469,24 @@ mod tests {
     fn test_event_attributes_with_conversions() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()));
-        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(
+            ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::DateTime(
+                NaiveDateTime::parse_from_str("20060919T215900Z", DATE_TIME_FMT).unwrap()
+            )
+        );
+        assert_eq!(
+            ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::DateTime(
+                NaiveDateTime::parse_from_str("20060910T220000Z", DATE_TIME_FMT).unwrap()
+            )
+        );
+        assert_eq!(
+            ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::DateTime(
+                NaiveDateTime::parse_from_str("20060812T125900Z", DATE_TIME_FMT).unwrap()
+            )
+        );
     }
 
     #[cfg(feature = "timeconversions")]
@@ -418,9 +496,20 @@ mod tests {
         assert_eq!(ical.version().unwrap().raw(), "2.0");
         assert_eq!(ical.prodid().unwrap().raw(), "ownCloud Calendar");
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap()));
-        assert_eq!(ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(), Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap()));
-        assert_eq!(ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(), Time::DateTime(NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()));
+        assert_eq!(
+            ev.dtend().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::Date(NaiveDate::parse_from_str("20160326", DATE_FMT).unwrap())
+        );
+        assert_eq!(
+            ev.dtstart().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::Date(NaiveDate::parse_from_str("20160325", DATE_FMT).unwrap())
+        );
+        assert_eq!(
+            ev.dtstamp().map(|e| e.as_datetime().unwrap()).unwrap(),
+            Time::DateTime(
+                NaiveDateTime::parse_from_str("20160128T223013Z", DATE_TIME_FMT).unwrap()
+            )
+        );
     }
 
     #[test]
@@ -440,10 +529,17 @@ mod tests {
         ical.add_event(builder);
 
         let ev = ical.events().next().unwrap().unwrap();
-        assert_eq!(ev.uid().map(|e| e.raw().clone())         , Some("testuid".to_owned()));
-        assert_eq!(ev.description().map(|e| e.raw().clone()) , Some("test".to_owned()));
-        assert_eq!(ev.summary().map(|e| e.raw().clone())     , Some("summary".to_owned()));
-
+        assert_eq!(
+            ev.uid().map(|e| e.raw().clone()),
+            Some("testuid".to_owned())
+        );
+        assert_eq!(
+            ev.description().map(|e| e.raw().clone()),
+            Some("test".to_owned())
+        );
+        assert_eq!(
+            ev.summary().map(|e| e.raw().clone()),
+            Some("summary".to_owned())
+        );
     }
-
 }

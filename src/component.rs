@@ -1,8 +1,8 @@
-use std::str::FromStr;
 use std::collections::BTreeMap;
+use std::str::FromStr;
 
+use crate::parser::{ParseErrorReason, Parser};
 use crate::property::Property;
-use crate::parser::{Parser, ParseErrorReason};
 
 use crate::error::*;
 
@@ -15,7 +15,7 @@ pub struct Component {
     pub props: BTreeMap<String, Vec<Property>>,
 
     /// The component's child- or sub-components.
-    pub subcomponents: Vec<Component>
+    pub subcomponents: Vec<Component>,
 }
 
 impl Component {
@@ -23,7 +23,7 @@ impl Component {
         Component {
             name: name.into(),
             props: BTreeMap::new(),
-            subcomponents: vec![]
+            subcomponents: vec![],
         }
     }
 
@@ -41,7 +41,7 @@ impl Component {
     pub fn get_only<P: AsRef<str>>(&self, name: P) -> Option<&Property> {
         match self.props.get(name.as_ref()) {
             Some(x) if x.len() == 1 => Some(&x[0]),
-            _ => None
+            _ => None,
         }
     }
 
@@ -50,7 +50,7 @@ impl Component {
         static EMPTY: &[Property] = &[];
         match self.props.get(name.as_ref()) {
             Some(values) => &values[..],
-            None => EMPTY
+            None => EMPTY,
         }
     }
 
@@ -58,7 +58,7 @@ impl Component {
     pub fn pop<P: AsRef<str>>(&mut self, name: P) -> Option<Property> {
         match self.props.get_mut(name.as_ref()) {
             Some(values) => values.pop(),
-            None => None
+            None => None,
         }
     }
 
@@ -165,7 +165,6 @@ pub fn fold_line(line: &str) -> String {
     ret
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::component::fold_line;
@@ -179,5 +178,4 @@ mod tests {
         assert_eq!(expected, fold_line(line));
         assert_eq!("ab", fold_line("ab"));
     }
-
 }

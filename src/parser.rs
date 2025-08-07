@@ -34,10 +34,7 @@ pub struct Parser<'s> {
 
 impl<'s> Parser<'s> {
     pub fn new(input: &'s str) -> Self {
-        Parser {
-            input,
-            pos: 0,
-        }
+        Parser { input, pos: 0 }
     }
 
     /// look-ahead for next char at given offset from current position
@@ -55,17 +52,14 @@ impl<'s> Parser<'s> {
     /// - CR alone [is not acceptable content]
     ///   (https://tools.ietf.org/html/rfc5545#section-3.1)
     fn peek_at(&self, at: usize) -> Option<(char, usize)> {
-        match self.input[self.pos+at..].chars().next() {
+        match self.input[self.pos + at..].chars().next() {
             None => None,
             Some('\r') => self.peek_at(at + 1),
-            Some('\n') => {
-                match self.peek_at(at + 1) {
-                    Some((' ', offset)) |
-                    Some(('\t', offset)) => self.peek_at(offset),
-                    _ => Some(('\n', at + 1)),
-                }
-            }
-            Some(x) => Some((x, at + x.len_utf8()))
+            Some('\n') => match self.peek_at(at + 1) {
+                Some((' ', offset)) | Some(('\t', offset)) => self.peek_at(offset),
+                _ => Some(('\n', at + 1)),
+            },
+            Some(x) => Some((x, at + x.len_utf8())),
         }
     }
 
@@ -81,13 +75,11 @@ impl<'s> Parser<'s> {
     fn assert_char(&self, c: char) -> ParseResult<()> {
         let real_c = match self.peek() {
             Some((x, _)) => x,
-            None => {
-                return Err(ParseErrorReason::UnexpectedEol(c))
-           }
+            None => return Err(ParseErrorReason::UnexpectedEol(c)),
         };
 
         if real_c != c {
-            return Err(ParseErrorReason::UnexpectedChar(c, real_c))
+            return Err(ParseErrorReason::UnexpectedChar(c, real_c));
         };
 
         Ok(())
@@ -95,8 +87,11 @@ impl<'s> Parser<'s> {
 
     pub fn consume_char(&mut self) -> Option<char> {
         match self.peek() {
-            Some((c, offset)) => { self.pos += offset; Some(c) },
-            None => None
+            Some((c, offset)) => {
+                self.pos += offset;
+                Some(c)
+            }
+            None => None,
         }
     }
 
@@ -104,8 +99,11 @@ impl<'s> Parser<'s> {
     /// otherwise return `false`.
     pub fn consume_only_char(&mut self, c: char) -> bool {
         match self.peek() {
-            Some((d, offset)) if d == c => { self.pos += offset; true },
-            _ => false
+            Some((d, offset)) if d == c => {
+                self.pos += offset;
+                true
+            }
+            _ => false,
         }
     }
 
@@ -149,7 +147,7 @@ impl<'s> Parser<'s> {
             match self.peek() {
                 Some((c, offset)) => {
                     if !test(c) {
-                        break
+                        break;
                     } else {
                         if offset > c.len_utf8() {
                             // we have some skipping and therefore need to flush
@@ -159,8 +157,8 @@ impl<'s> Parser<'s> {
                         }
                         self.pos += offset;
                     }
-                },
-                _ => break
+                }
+                _ => break,
             }
         }
         // Final flush
@@ -206,7 +204,7 @@ impl<'s> Parser<'s> {
                 Ok(_) => {
                     self.consume_char();
                     return Ok(name);
-                },
+                }
                 Err(e) => Err(e),
             },
             Err(e) => Err(e),
@@ -228,13 +226,7 @@ impl<'s> Parser<'s> {
     }
 
     fn consume_param_value(&mut self) -> ParseResult<String> {
-        let qsafe = |x| {
-            x != '"' &&
-            x != '\r' &&
-            x != '\n' &&
-            x != '\u{7F}' &&
-            x > '\u{1F}'
-        };
+        let qsafe = |x| x != '"' && x != '\r' && x != '\n' && x != '\u{7F}' && x > '\u{1F}';
 
         if self.consume_only_char('"') {
             let rv = self.consume_while(qsafe);
@@ -252,7 +244,10 @@ impl<'s> Parser<'s> {
         let value = if self.consume_only_char('=') {
             match self.consume_param_value() {
                 Ok(x) => x,
-                Err(e) => { self.pos = start_pos; return Err(e); }
+                Err(e) => {
+                    self.pos = start_pos;
+                    return Err(e);
+                }
             }
         } else {
             String::new()
@@ -265,7 +260,9 @@ impl<'s> Parser<'s> {
         let mut rv: BTreeMap<String, String> = BTreeMap::new();
         while self.consume_only_char(';') {
             match self.consume_param() {
-                Ok((name, value)) => { rv.insert(name.to_owned(), value.to_owned()); },
+                Ok((name, value)) => {
+                    rv.insert(name.to_owned(), value.to_owned());
+                }
                 Err(_) => break,
             }
         }
@@ -292,7 +289,10 @@ impl<'s> Parser<'s> {
             } else if property.name == "END" {
                 if property.raw_value != component.name {
                     self.pos = start_pos;
-                    return Err(ParseErrorReason::MismatchedTag(component.name, property.raw_value));
+                    return Err(ParseErrorReason::MismatchedTag(
+                        component.name,
+                        property.raw_value,
+                    ));
                 }
 
                 break;
@@ -311,14 +311,20 @@ mod tests {
 
     #[test]
     fn test_unfold1() {
-        let mut p = Parser{input: "ab\r\n c", pos: 2};
+        let mut p = Parser {
+            input: "ab\r\n c",
+            pos: 2,
+        };
         assert_eq!(p.consume_char(), Some('c'));
         assert_eq!(p.pos, 6);
     }
 
     #[test]
     fn test_unfold2() {
-        let mut p = Parser{input: "ab\n\tc\nx", pos: 2};
+        let mut p = Parser {
+            input: "ab\n\tc\nx",
+            pos: 2,
+        };
         assert_eq!(p.consume_char(), Some('c'));
         assert_eq!(p.consume_char(), Some('\n'));
         assert_eq!(p.consume_char(), Some('x'));
@@ -326,7 +332,10 @@ mod tests {
 
     #[test]
     fn test_consume_while() {
-        let mut p = Parser{input:"af\n oo:bar", pos: 1};
+        let mut p = Parser {
+            input: "af\n oo:bar",
+            pos: 1,
+        };
         assert_eq!(p.consume_while(|x| x != ':'), "foo");
         assert_eq!(p.consume_char(), Some(':'));
         assert_eq!(p.consume_while(|x| x != '\n'), "bar");
@@ -334,7 +343,10 @@ mod tests {
 
     #[test]
     fn test_consume_while2() {
-        let mut p = Parser{input:"af\n oo\n\t:bar", pos: 1};
+        let mut p = Parser {
+            input: "af\n oo\n\t:bar",
+            pos: 1,
+        };
         assert_eq!(p.consume_while(|x| x != ':'), "foo");
         assert_eq!(p.consume_char(), Some(':'));
         assert_eq!(p.consume_while(|x| x != '\n'), "bar");
@@ -342,7 +354,10 @@ mod tests {
 
     #[test]
     fn test_consume_while3() {
-        let mut p = Parser{input:"af\n oo:\n bar", pos: 1};
+        let mut p = Parser {
+            input: "af\n oo:\n bar",
+            pos: 1,
+        };
         assert_eq!(p.consume_while(|x| x != ':'), "foo");
         assert_eq!(p.consume_char(), Some(':'));
         assert_eq!(p.consume_while(|x| x != '\n'), "bar");
@@ -350,7 +365,10 @@ mod tests {
 
     #[test]
     fn test_consume_only_char() {
-        let mut p = Parser{input:"\n \"bar", pos: 0};
+        let mut p = Parser {
+            input: "\n \"bar",
+            pos: 0,
+        };
         assert!(p.consume_only_char('"'));
         assert_eq!(p.pos, 3);
         assert!(!p.consume_only_char('"'));
@@ -362,27 +380,27 @@ mod tests {
     #[test]
     fn mismatched_begin_end_tags_returns_error() {
         // Test for infinite loops as well
+        use super::ParseErrorReason;
         use std::sync::mpsc::{channel, RecvTimeoutError};
         use std::time::Duration;
-        use super::ParseErrorReason;
-        let mut p = Parser {input: "BEGIN:a\nBEGIN:b\nEND:a", pos: 0};
+        let mut p = Parser {
+            input: "BEGIN:a\nBEGIN:b\nEND:a",
+            pos: 0,
+        };
 
         let (tx, rx) = channel();
-        ::std::thread::spawn(move|| { tx.send(p.consume_component()) });
+        ::std::thread::spawn(move || tx.send(p.consume_component()));
 
         match rx.recv_timeout(Duration::from_millis(50)) {
             Err(RecvTimeoutError::Timeout) => assert!(false),
-            Ok(Err(e)) => {
-                match e {
-                    ParseErrorReason::MismatchedTag(begin, end) => {
-                        assert_eq!(begin, "b");
-                        assert_eq!(end, "a");
-                    },
-                    _ => assert!(false),
+            Ok(Err(e)) => match e {
+                ParseErrorReason::MismatchedTag(begin, end) => {
+                    assert_eq!(begin, "b");
+                    assert_eq!(end, "a");
                 }
+                _ => assert!(false),
             },
             _ => assert!(false),
         }
     }
-
 }

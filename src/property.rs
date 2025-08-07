@@ -13,20 +13,21 @@ pub struct Property {
 
     /// Property group. E.g. a contentline like `foo.FN:Markus` would result in the group being
     /// `"foo"`.
-    pub prop_group: Option<String>
+    pub prop_group: Option<String>,
 }
 
 impl Property {
     /// Create property from unescaped string.
     pub fn new<N, V>(name: N, value: V) -> Property
-        where N: Into<String>,
-              V: AsRef<str>
+    where
+        N: Into<String>,
+        V: AsRef<str>,
     {
         Property {
             name: name.into(),
             params: BTreeMap::new(),
             raw_value: escape_chars(value.as_ref()),
-            prop_group: None
+            prop_group: None,
         }
     }
 
@@ -40,8 +41,7 @@ impl Property {
 pub fn escape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\n")
+    s.replace("\\N", "\n")
         .replace("\\", "\\\\")
         .replace(";", "\\;")
         .replace(",", "\\,")
@@ -53,12 +53,10 @@ pub fn escape_chars(s: &str) -> String {
 pub fn unescape_chars(s: &str) -> String {
     // Order matters! Lifted from icalendar.parser
     // https://github.com/collective/icalendar/
-    s
-        .replace("\\N", "\\n")
+    s.replace("\\N", "\\n")
         .replace("\r\n", "\n")
         .replace("\\n", "\n")
         .replace("\\,", ",")
         .replace("\\;", ";")
         .replace("\\\\", "\\")
 }
-
