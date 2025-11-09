@@ -82,7 +82,7 @@ impl ICalendar {
     ///     .collect::<Vec<Event>>();
     /// ```
     ///
-    pub fn events<'a>(&'a self) -> EventIterator<'a> {
+    pub fn events(&self) -> EventIterator<'_> {
         EventIterator::new(self.0.subcomponents.iter())
     }
 
@@ -213,7 +213,7 @@ macro_rules! make_setter_function_for {
         pub fn $fnname(&mut self, value: $type, params: Option<BTreeMap<String, String>>) {
             let property = Property {
                 name: String::from($name),
-                params: params.unwrap_or_else(|| BTreeMap::new()),
+                params: params.unwrap_or_else(BTreeMap::new),
                 raw_value: $tostring(value),
                 prop_group: None,
             };
@@ -233,7 +233,7 @@ macro_rules! make_function_for {
         pub fn $fnname(mut self, value: $type, params: Option<BTreeMap<String, String>>) -> Self {
             let property = Property {
                 name: String::from($name),
-                params: params.unwrap_or_else(|| BTreeMap::new()),
+                params: params.unwrap_or_else(BTreeMap::new),
                 raw_value: $tostring(value),
                 prop_group: None,
             };
@@ -332,7 +332,7 @@ mod tests {
 
     use super::*;
 
-    const TEST_ENTRY: &'static str = "BEGIN:VCALENDAR\n\
+    const TEST_ENTRY: &str = "BEGIN:VCALENDAR\n\
             VERSION:2.0\n\
             PRODID:http://www.example.com/calendarapplication/\n\
             METHOD:PUBLISH\n\
@@ -349,7 +349,7 @@ mod tests {
             END:VEVENT\n\
             END:VCALENDAR\n";
 
-    const TEST_ENTRY_OC: &'static str = // Lets see how owncloud foo works here
+    const TEST_ENTRY_OC: &str = // Lets see how owncloud foo works here
         "BEGIN:VCALENDAR\n\
         VERSION:2.0\n\
         PRODID:ownCloud Calendar\n\
