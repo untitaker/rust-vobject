@@ -40,8 +40,19 @@ impl ICalendar {
         self.0.subcomponents.push(builder.into_component())
     }
 
+    /// Add a journal to the calendar
+    pub fn add_journal(&mut self, builder: JournalBuilder) {
+        self.0.subcomponents.push(builder.into_component())
+    }
+
     /// Chainable variant of `ICalendar::add_event()`.
     pub fn with_event(mut self, builder: EventBuilder) -> Self {
+        self.0.subcomponents.push(builder.into_component());
+        self
+    }
+
+    /// Chainable variant of `ICalendar::add_journal()`.
+    pub fn with_journal(mut self, builder: JournalBuilder) -> Self {
         self.0.subcomponents.push(builder.into_component());
         self
     }
@@ -84,6 +95,36 @@ impl ICalendar {
     ///
     pub fn events(&self) -> EventIterator<'_> {
         EventIterator::new(self.0.subcomponents.iter())
+    }
+
+    /// Get an iterator over the journals in this calendar
+    ///
+    /// The iterator creates Ok(&Journal) instances on the fly, or Err(&Component) instances if the
+    /// item cannot be parsed as an Event, not forgetting any data.
+    ///
+    /// # Getting actual objects
+    ///
+    /// For getting a Journal-instance iterator from this, one can use this as follows:
+    ///
+    /// ```
+    /// # use std::collections::BTreeMap;
+    /// # use vobject::component::Component;
+    /// # use vobject::icalendar::Journal;
+    /// # use vobject::icalendar::ICalendar;
+    /// # let icalendar = ICalendar::from_component(Component {
+    /// #     name:          "VCALENDAR".to_owned(),
+    /// #     props:         BTreeMap::new(),
+    /// #     subcomponents: vec![]
+    /// # }).unwrap();
+    /// icalendar
+    ///     .journals()
+    ///     .filter_map(Result::ok)
+    ///     .map(|jour| jour.clone())
+    ///     .collect::<Vec<Journal>>();
+    /// ```
+    ///
+    pub fn journals(&self) -> JournalIterator<'_> {
+        JournalIterator::new(self.0.subcomponents.iter())
     }
 
     make_getter_function_for_optional!(version, "VERSION", Version);
@@ -139,6 +180,68 @@ impl<'a> Event<'a> {
     }
 }
 
+pub struct JournalIterator<'a>(::std::slice::Iter<'a, Component>);
+
+impl<'a> JournalIterator<'a> {
+    fn new(i: ::std::slice::Iter<'a, Component>) -> JournalIterator<'a> {
+        JournalIterator(i)
+    }
+}
+
+impl<'a> Iterator for JournalIterator<'a> {
+    type Item = Result<Journal<'a>, &'a Component>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(Journal::from_component)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Journal<'a>(&'a Component);
+
+impl<'a> Journal<'a> {
+    fn from_component(c: &'a Component) -> Result<Journal<'a>, &'a Component> {
+        if c.name == "VJOURNAL" {
+            Ok(Journal(c))
+        } else {
+            Err(c)
+        }
+    }
+
+    make_getter_function_for_optional!(dtstamp, "DTSTAMP", Dtstamp);
+    make_getter_function_for_optional!(uid, "UID", Uid);
+
+    make_getter_function_for_optional!(class, "CLASS", Class);
+    make_getter_function_for_optional!(created, "CREATED", Created);
+    make_getter_function_for_optional!(dtstart, "DTSTART", Dtstart);
+    make_getter_function_for_optional!(last_modified, "LAST-MODIFIED", LastModified);
+    make_getter_function_for_optional!(organizer, "ORGANIZER", Organizer);
+    make_getter_function_for_optional!(recurrence_id, "RECURRENCE-ID", RecurrenceId);
+    make_getter_function_for_optional!(sequence, "SEQUENCE", Sequence);
+    make_getter_function_for_optional!(status, "STATUS", Status);
+    make_getter_function_for_optional!(summary, "SUMMARY", Summary);
+    make_getter_function_for_optional!(url, "URL", Url);
+    make_getter_function_for_optional!(color, "COLOR", Color);
+
+    make_getter_function_for_values!(rrule, "RRULE", Rrule);
+
+    make_getter_function_for_values!(attach, "ATTACH", Attach);
+    make_getter_function_for_values!(attendee, "ATTENDEE", Attendee);
+    make_getter_function_for_values!(categories, "CATEGORIES", Categories);
+    make_getter_function_for_values!(comment, "COMMENT", Comment);
+    make_getter_function_for_values!(contact, "CONTACT", Contact);
+    make_getter_function_for_values!(description, "DESCRIPTION", Description);
+    make_getter_function_for_values!(exdate, "EXDATE", Exdate);
+    make_getter_function_for_values!(related, "RELATED", Related);
+    make_getter_function_for_values!(rdate, "RDATE", Rdate);
+    make_getter_function_for_values!(request_status, "REQUEST-STATUS", RequestStatus);
+    make_getter_function_for_values!(image, "IMAGE", Image);
+
+    pub fn build() -> JournalBuilder {
+        JournalBuilder(Component::new(String::from("VJOURNAL")))
+    }
+}
+
 create_data_type!(Dtend);
 create_data_type!(Dtstart);
 create_data_type!(Dtstamp);
@@ -151,6 +254,23 @@ create_data_type!(Class);
 create_data_type!(Categories);
 create_data_type!(Transp);
 create_data_type!(Rrule);
+
+create_data_type!(Created);
+create_data_type!(LastModified);
+create_data_type!(Organizer);
+create_data_type!(RecurrenceId);
+create_data_type!(Sequence);
+create_data_type!(Status);
+create_data_type!(Color);
+create_data_type!(Attach);
+create_data_type!(Attendee);
+create_data_type!(Comment);
+create_data_type!(Contact);
+create_data_type!(Exdate);
+create_data_type!(Related);
+create_data_type!(Rdate);
+create_data_type!(RequestStatus);
+create_data_type!(Image);
 
 #[cfg(feature = "timeconversions")]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
@@ -190,6 +310,18 @@ impl AsDateTime for Dtstart {
 
 #[cfg(feature = "timeconversions")]
 impl AsDateTime for Dtstamp {
+    fn as_datetime(&self) -> VObjectResult<Time> {
+        Ok(
+            match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
+                Ok(dt) => Time::DateTime(dt),
+                Err(_) => NaiveDate::parse_from_str(&self.0, DATE_FMT).map(Time::Date)?,
+            },
+        )
+    }
+}
+
+#[cfg(feature = "timeconversions")]
+impl AsDateTime for LastModified {
     fn as_datetime(&self) -> VObjectResult<Time> {
         Ok(
             match NaiveDateTime::parse_from_str(&self.0, DATE_TIME_FMT) {
@@ -323,6 +455,103 @@ impl EventBuilder {
     make_function_for!(with_rrule, "RRULE", Rrule, Rrule::into_raw);
 }
 
+#[derive(Clone, Debug)]
+pub struct JournalBuilder(Component);
+
+impl JournalBuilder {
+    /// Private function for adding journal to calendar
+    fn into_component(self) -> Component {
+        self.0
+    }
+
+    make_setter_function_for!(set_dtstamp, "DTSTAMP", Dtstamp, Dtstamp::into_raw);
+    make_setter_function_for!(set_uid, "UID", Uid, Uid::into_raw);
+
+    make_setter_function_for!(set_class, "CLASS", Class, Class::into_raw);
+    make_setter_function_for!(set_created, "CREATED", Created, Created::into_raw);
+    make_setter_function_for!(set_dtstart, "DTSTART", Dtstart, Dtstart::into_raw);
+    make_setter_function_for!(
+        set_last_modified,
+        "LAST-MODIFIED",
+        LastModified,
+        LastModified::into_raw
+    );
+    make_setter_function_for!(set_organizer, "ORGANIZER", Organizer, Organizer::into_raw);
+    make_setter_function_for!(
+        set_recurrence_id,
+        "RECURRENCE-ID",
+        RecurrenceId,
+        RecurrenceId::into_raw
+    );
+    make_setter_function_for!(set_sequence, "SEQUENCE", Sequence, Sequence::into_raw);
+    make_setter_function_for!(set_status, "STATUS", Status, Status::into_raw);
+    make_setter_function_for!(set_summary, "SUMMARY", Summary, Summary::into_raw);
+    make_setter_function_for!(set_url, "URL", Url, Url::into_raw);
+    make_setter_function_for!(set_color, "COLOR", Color, Color::into_raw);
+
+    make_setter_function_for!(set_rrule, "RRULE", Rrule, Rrule::into_raw);
+
+    make_setter_function_for!(set_attach, "ATTACH", Attach, Attach::into_raw);
+    make_setter_function_for!(set_attendee, "ATTENDEE", Attendee, Attendee::into_raw);
+    make_setter_function_for!(
+        set_categories,
+        "CATEGORIES",
+        Categories,
+        Categories::into_raw
+    );
+    make_setter_function_for!(set_comment, "COMMENT", Comment, Comment::into_raw);
+    make_setter_function_for!(set_contact, "CONTACT", Contact, Contact::into_raw);
+    make_setter_function_for!(
+        set_description,
+        "DESCRIPTION",
+        Description,
+        Description::into_raw
+    );
+    make_setter_function_for!(set_exdate, "EXDATE", Exdate, Exdate::into_raw);
+    make_setter_function_for!(set_related, "RELATED", Related, Related::into_raw);
+    make_setter_function_for!(set_rdate, "RDATE", Rdate, Rdate::into_raw);
+    make_setter_function_for!(
+        set_request_status,
+        "REQUEST-STATUS",
+        RequestStatus,
+        RequestStatus::into_raw
+    );
+    make_setter_function_for!(set_image, "IMAGE", Image, Image::into_raw);
+
+    //
+    // chainable builders
+    //
+
+    make_function_for!(with_rrule, "RRULE", Rrule, Rrule::into_raw);
+
+    make_function_for!(with_attach, "ATTACH", Attach, Attach::into_raw);
+    make_function_for!(with_attendee, "ATTENDEE", Attendee, Attendee::into_raw);
+    make_function_for!(
+        with_categories,
+        "CATEGORIES",
+        Categories,
+        Categories::into_raw
+    );
+    make_function_for!(with_comment, "COMMENT", Comment, Comment::into_raw);
+    make_function_for!(with_contact, "CONTACT", Contact, Contact::into_raw);
+    make_function_for!(
+        with_description,
+        "DESCRIPTION",
+        Description,
+        Description::into_raw
+    );
+    make_function_for!(with_exdate, "EXDATE", Exdate, Exdate::into_raw);
+    make_function_for!(with_related, "RELATED", Related, Related::into_raw);
+    make_function_for!(with_rdate, "RDATE", Rdate, Rdate::into_raw);
+    make_function_for!(
+        with_request_status,
+        "REQUEST-STATUS",
+        RequestStatus,
+        RequestStatus::into_raw
+    );
+    make_function_for!(with_image, "IMAGE", Image, Image::into_raw);
+}
+
 #[cfg(all(test, feature = "timeconversions"))]
 mod tests {
     use super::ICalendar;
@@ -347,6 +576,21 @@ mod tests {
             DTEND:20060919T215900Z\n\
             DTSTAMP:20060812T125900Z\n\
             END:VEVENT\n\
+            END:VCALENDAR\n";
+
+    const TEST_JOURNAL: &str = "BEGIN:VCALENDAR\n\
+            VERSION:2.0\n\
+            PRODID:http://www.example.com/calendarapplication/\n\
+            METHOD:PUBLISH\n\
+            BEGIN:VJOURNAL\n\
+            DTSTAMP:20060812T125900Z\n\
+            UID:461092315640@example.com\n\
+            SUMMARY:Journal entry\n\
+            DESCRIPTION:A long journal entry \n \
+             which wraps lines.\n\
+            STATUS:IN_PROGRESS\n\
+            CATEGORIES:test\n\
+            END:VJOURNAL\n\
             END:VCALENDAR\n";
 
     const TEST_ENTRY_OC: &str = // Lets see how owncloud foo works here
@@ -376,9 +620,23 @@ mod tests {
     }
 
     #[test]
+    fn test_journal_parse() {
+        let cal = ICalendar::build(TEST_JOURNAL);
+        assert!(cal.is_ok(), "Not okay: {:?}\n in '{}'", cal, TEST_JOURNAL);
+    }
+
+    #[test]
     fn test_iter() {
         let ical = ICalendar::build(TEST_ENTRY).unwrap();
-        assert_eq!(ical.events().count(), 1);
+        assert_eq!(ical.events().filter(|r| r.is_ok()).count(), 1);
+        assert_eq!(ical.journals().filter(|r| r.is_ok()).count(), 0);
+    }
+
+    #[test]
+    fn test_journal_iter() {
+        let ical = ICalendar::build(TEST_JOURNAL).unwrap();
+        assert_eq!(ical.journals().filter(|r| r.is_ok()).count(), 1);
+        assert_eq!(ical.events().filter(|r| r.is_ok()).count(), 0);
     }
 
     #[test]
@@ -431,6 +689,45 @@ mod tests {
         assert_eq!(ev.categories(), None);
         assert_eq!(ev.transp(), None);
         assert_eq!(ev.rrule(), None);
+    }
+
+    #[test]
+    fn test_journal_attributes() {
+        let ical = ICalendar::build(TEST_JOURNAL).unwrap();
+        let j = ical.journals().next().unwrap().unwrap();
+        assert_eq!(
+            j.dtstamp().map(|j| j.raw().clone()),
+            Some("20060812T125900Z".to_owned())
+        );
+        assert_eq!(
+            j.uid().map(|j| j.raw().clone()),
+            Some("461092315640@example.com".to_owned())
+        );
+        assert_eq!(
+            j.description()
+                .into_iter()
+                .map(|j| j.raw().clone())
+                .collect::<Vec<_>>(),
+            vec!["A long journal entry which wraps lines.".to_owned()]
+        );
+        assert_eq!(
+            j.summary().map(|j| j.raw().clone()),
+            Some("Journal entry".to_owned())
+        );
+        assert_eq!(j.url(), None);
+        assert_eq!(j.class().map(|j| j.raw().clone()), None,);
+        assert_eq!(
+            j.status().map(|j| j.raw().clone()),
+            Some("IN_PROGRESS".to_owned())
+        );
+        assert_eq!(
+            j.categories()
+                .into_iter()
+                .map(|j| j.raw().clone())
+                .collect::<Vec<_>>(),
+            vec!["test".to_owned()]
+        );
+        assert_eq!(j.rrule(), vec![]);
     }
 
     #[test]
@@ -549,6 +846,37 @@ mod tests {
         );
         assert_eq!(
             ev.summary().map(|e| e.raw().clone()),
+            Some("summary".to_owned())
+        );
+    }
+
+    #[test]
+    fn test_build_journal() {
+        let mut ical = ICalendar::empty();
+        let mut builder = Journal::build();
+
+        let desc = Description::new(String::from("test"), BTreeMap::new());
+        builder.set_description(desc, None);
+
+        let uid = Uid::new(String::from("testuid"), BTreeMap::new());
+        builder.set_uid(uid, None);
+
+        let summary = Summary::new(String::from("summary"), BTreeMap::new());
+        builder.set_summary(summary, None);
+
+        ical.add_journal(builder);
+
+        let j = ical.journals().next().unwrap().unwrap();
+        assert_eq!(j.uid().map(|j| j.raw().clone()), Some("testuid".to_owned()));
+        assert_eq!(
+            j.description()
+                .into_iter()
+                .map(|j| j.raw().clone())
+                .collect::<Vec<_>>(),
+            vec!["test".to_owned()]
+        );
+        assert_eq!(
+            j.summary().map(|j| j.raw().clone()),
             Some("summary".to_owned())
         );
     }
