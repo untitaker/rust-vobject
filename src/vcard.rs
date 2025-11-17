@@ -168,7 +168,7 @@ impl VcardBuilder {
 
     make_builder_fn!(fn with_anniversary  building "ANNIVERSARY"        , |o| o => value: String);
     make_builder_fn!(fn with_bday         building "BDAY" with_params   , |o| o => value: String);
-    make_builder_fn!(fn with_categories   building "CATEGORIES"         , |o| o.join(";") => org: Vec<String>);
+    make_builder_fn!(fn with_categories   building "CATEGORIES"         , |o| o.join(",") => org: Vec<String>);
     make_builder_fn!(fn with_clientpidmap building "CLIENTPIDMAP"       , |o| o => raw: String);
     make_builder_fn!(fn with_email        building "EMAIL"              , |o| o => email: String);
     make_builder_fn!(fn with_fullname     building "FN"                 , |o| o => fullname: String);
@@ -344,6 +344,7 @@ mod test {
             )
             .with_email("erika@mustermann.de".into())
             .with_rev("20140301T221110Z".into())
+            .with_categories(vec!["wiki".into(), "online".into()])
             .build()
             .unwrap();
 
@@ -351,6 +352,7 @@ mod test {
 
         let expected = "BEGIN:VCARD\r\n\
             ADR;TYPE=HOME:;;Heidestrasse 17;Koeln;;51147;Deutschland\r\n\
+            CATEGORIES:wiki,online\r\n\
             EMAIL:erika@mustermann.de\r\n\
             FN:Erika Mustermann\r\n\
             N:;Mustermann;;Erika;\r\n\
